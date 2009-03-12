@@ -15,6 +15,9 @@ IS_EXPORT_LINE = re.compile(r"exports\.(.*?)=")
 
 class RequireCommand(sublime_plugin.TextCommand):
 
+    """Text Command to prompt the user for a module, and upon
+    selection insert it into the current view"""
+
     def run(self, edit, command):
         self.edit = edit
         # Simple Require Command
@@ -222,7 +225,8 @@ class RequireCommand(sublime_plugin.TextCommand):
     def show_exports(self):
         sublime.set_timeout(
             lambda: sublime.active_window().show_quick_panel(
-                self.exports, self.on_export_done), 10
+                self.exports,
+                self.on_export_done), 10
         )
 
     def on_export_done(self, index):
