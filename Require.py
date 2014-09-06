@@ -42,7 +42,9 @@ class RequireCommand(sublime_plugin.TextCommand):
         if file_name[0] is not '.':
           file_name = "%s/%s" % (root, file_name)
           file_name = os.path.relpath(file_name, dirname)
-          self.files.append(file_name)
+          if '/' not in file_name:
+            file_name = "./%s" % file_name  
+        self.files.append(file_name)
 
   def parse_package_json(self):
     package = os.path.join(self.project_folder, 'package.json')
