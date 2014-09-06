@@ -1,4 +1,4 @@
 [{
-  "keys": ["super+shift+i"],
+  "keys": ["ctrl+shift+i"],
   "command": "require"
 }]
