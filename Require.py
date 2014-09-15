@@ -4,6 +4,7 @@ import os, json
 class RequireCommand(sublime_plugin.TextCommand):
   def run(self, edit):
     self.files = [
+      'assert',
       'cluster',
       'child_process',
       'dgram',
@@ -23,7 +24,7 @@ class RequireCommand(sublime_plugin.TextCommand):
       'util',
       'vm',
       'zlib'
-      ]
+    ]
     self.project_folder = sublime.active_window().project_data()['folders'][0]['path']
     self.load_file_list()
     
@@ -42,8 +43,13 @@ class RequireCommand(sublime_plugin.TextCommand):
         if file_name[0] is not '.':
           file_name = "%s/%s" % (root, file_name)
           file_name = os.path.relpath(file_name, dirname)
+          
+          if file_name == os.path.basename(self.view.file_name()):
+            continue
+
           if '/' not in file_name:
-            file_name = "./%s" % file_name  
+            file_name = "./%s" % file_name
+
         self.files.append(file_name)
 
   def parse_package_json(self):
@@ -73,16 +79,27 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
     module = args['module'];
     module_name = os.path.basename(module)
     extension_index = module_name.find('.')
+    extension = ''
     if extension_index > 0:
+      extension = module_name[:-extension_index]
       module_name = module_name[:extension_index]
+
 
     if 'models' in module:
       module_name = module_name.capitalize()
 
-    dash_index = module_name.find('-')
-    if dash_index > 0:
-      module_name = "%s%s" % (module_name[:dash_index].capitalize(), module_name[dash_index + 1:].capitalize())
+    if 'collections' in module:
+      module_name = module_name.capitalize()
 
+    if module_name == 'index':
+      temp_module = module[:5 + len(extension) + 1]
+      module_name = os.path.basename(temp_module)
+
+
+    dash_index = module_name.find('-')
+    while dash_index > 0:
+      module_name = "%s%s" % (module_name[:dash_index].capitalize(), module_name[dash_index + 1:].capitalize())
+      dash_index = module_name.find('-')
 
     text_to_insert = "var %s = require('%s');" % (module_name, module)
 
