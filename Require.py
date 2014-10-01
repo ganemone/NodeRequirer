@@ -27,7 +27,7 @@ class RequireCommand(sublime_plugin.TextCommand):
     ]
     self.project_folder = sublime.active_window().project_data()['folders'][0]['path']
     self.load_file_list()
-    
+
     sublime.active_window().show_quick_panel(self.files, self.insert)
 
   def load_file_list(self):
@@ -43,7 +43,7 @@ class RequireCommand(sublime_plugin.TextCommand):
         if file_name[0] is not '.':
           file_name = "%s/%s" % (root, file_name)
           file_name = os.path.relpath(file_name, dirname)
-          
+
           if file_name == os.path.basename(self.view.file_name()):
             continue
 

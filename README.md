@@ -3,9 +3,23 @@
 
 ## About
 This is a Sublime Text 3 plugin allowing you to easily require node modules
-without having to worry about relative paths. It parses your project to allow you 
-to local file or any dependency listed in your package.json. In addition, it allows
+without having to worry about relative paths. It parses your project to allow you
+to require any local module or dependency listed in your package.json. In addition, it allows
 you to include node core modules.
+
+## Usage
+Simply type 'ctrl+shift+i' and search for the module you are looking to require.
+SublimeRequirer will insert `var {modulename} = require('/path/to/modulename.js')`.
+
+NOTE: I build sublime requirer to help me be more productive. Currently, it is configured to work well
+with the naming convention that I use. For example, modules inside a /models folder will have their names
+capitalized automatically. Additionally, any module with a name separated by dashes will remove the dash, and capitalize the individual words.
+
+Example:
+```
+var Person = require('../../models/person.js');
+var MovieStar = require('../../movie-star.js');
+```
 
 ## Installation
 ### Through [Sublime Package Manager](http://wbond.net/sublime_packages/package_control)
@@ -47,19 +61,7 @@ These are for Sublime Text 3:
 #### Windows
 `git clone https://github.com/ganemone/NodeRequirer.git "%APPDATA%/Sublime Text 3/Packages/NodeRequirer"`
 
-## Usage
-Simply type 'ctrl+shift+i' and search for the module you are looking to require. 
-SublimeRequirer will insert `var {modulename} = require('/path/to/modulename.js')`.
 
-NOTE: I build sublime requirer to help me be more productive. Currently, it is configured to work well
-with the naming convention that I use. For example, modules inside a /models folder will have their names 
-capitalized automatically. Additionally, any module with a name separated by dashes will remove the dash, and capitalize the individual words.
-
-Example:
-```
-var Person = require('../../models/person.js');
-var MovieStar = require('../../movie-star.js');
-```
 
 I will be making this more configurable in the future.
 
