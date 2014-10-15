@@ -5,10 +5,13 @@ class RequireCommand(sublime_plugin.TextCommand):
   def run(self, edit):
     self.files = [
       'assert',
+      'buffer',
       'cluster',
       'child_process',
+      'crypto',
       'dgram',
       'dns',
+      'domain',
       'events',
       'fs',
       'http',
@@ -18,6 +21,7 @@ class RequireCommand(sublime_plugin.TextCommand):
       'path',
       'punycode',
       'readline',
+      'stream',
       'string_decoder',
       'tls',
       'url',
