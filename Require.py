@@ -54,13 +54,10 @@ class RequireCommand(sublime_plugin.TextCommand):
 
   def parse_package_json(self):
     package = os.path.join(self.project_folder, 'package.json')
-
-    f = open(package, 'r')
-    package_json = json.load(f)
-
-    self.files += list(package_json['dependencies']) +\
-                    list(package_json['devDependencies']) +\
-                    list(package_json['optionalDependencies'])
+    package_json = json.load(open(package, 'r'))
+    for dependencyType in ('dependencies', 'devDependencies', 'optionalDependencies'):
+      if dependencyType in package_json:
+        self.files += package_json[dependencyType].keys()
 
 
   def insert(self, index):
