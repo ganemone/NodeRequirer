@@ -58,9 +58,9 @@ class RequireCommand(sublime_plugin.TextCommand):
     f = open(package, 'r')
     package_json = json.load(f)
 
-    all_dependencies = list(package_json['dependencies']) + list(package_json['devDependencies'])
-
-    self.files = self.files + all_dependencies
+    self.files += list(package_json['dependencies']) +\
+                    list(package_json['devDependencies']) +\
+                    list(package_json['optionalDependencies'])
 
 
   def insert(self, index):
@@ -104,4 +104,3 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
     text_to_insert = "var %s = require('%s');" % (module_name, module)
 
     self.view.insert(edit, args['position'], text_to_insert)
-
