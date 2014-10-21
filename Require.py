@@ -86,8 +86,9 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
       module_name = os.path.basename(module)
       module_name, extension = os.path.splitext(module_name)
       if module_name == 'index':
-        temp_module = module[:5 + len(extension) + 1]
-        module_name = os.path.basename(temp_module)
+        module_name = os.path.split(os.path.dirname(module))[-1]
+        if module_name == '':
+          module_name = os.path.split(os.path.dirname(self.view.file_name()))[-1]
 
       dash_index = module_name.find('-')
       while dash_index > 0:
@@ -98,7 +99,6 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
     text_to_insert = 'var {name} = require({quote}{path}{quote});'.format(name=module_name, path=module, quote=quote)
 
     self.view.insert(edit, args['position'], text_to_insert)
-
 
 # Taken from Sublime JSHint Gutter
 SETTINGS_FILE = "Require.sublime-settings"
