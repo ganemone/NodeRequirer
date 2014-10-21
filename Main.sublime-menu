@@ -1,0 +1,15 @@
+[{
+  "id": "preferences",
+  "children": [{
+    "id": "package-settings",
+    "children": [{
+      "caption": "Node Require",
+      "children": [{
+        "caption": "Set Plugin Options",
+        "command": "open_file", "args": {
+          "file": "${packages}/NodeRequirer/Require.sublime-settings"
+        }
+      }]
+    }]
+  }]
+}]

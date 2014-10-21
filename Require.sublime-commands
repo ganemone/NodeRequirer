@@ -1,4 +1,9 @@
 [{
   "caption": "Require",
   "command": "require"
+}, {
+  "caption": "NodeRequirer: Set Plugin Options",
+  "command": "open_file", "args": {
+    "file": "${packages}/NodeRequirer/Require.sublime-settings"
+  }
 }]

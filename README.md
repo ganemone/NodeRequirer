@@ -47,6 +47,10 @@ Example:
 }
 ```
 
+### Options
+
+You can configure project aliases and quote options in the plugin options `ctrl+shift+p` and find *`NodeRequirer: Set Plugin Options`*
+
 ### Manually
 Make sure you use the right Sublime Text folder. For example, on OS X, packages for version 2 are in `~/Library/Application\ Support/Sublime\ Text\ 2`, while version 3 is labeled `~/Library/Application\ Support/Sublime\ Text\ 3`.
 
