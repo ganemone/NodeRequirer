@@ -1,5 +1,7 @@
 import sublime, sublime_plugin
-import os, json
+import os, json, re
+
+has_rel_path = re.compile("\.?\.?\/")
 
 class RequireCommand(sublime_plugin.TextCommand):
   def run(self, edit):
@@ -51,7 +53,7 @@ class RequireCommand(sublime_plugin.TextCommand):
           if file_name == os.path.basename(self.view.file_name()):
             continue
 
-          if '/' not in file_name:
+          if not has_rel_path.match(file_name):
             file_name = "./%s" % file_name
 
         self.files.append(file_name)
@@ -89,6 +91,9 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
         module_name = os.path.split(os.path.dirname(module))[-1]
         if module_name == '':
           module_name = os.path.split(os.path.dirname(self.view.file_name()))[-1]
+
+      if module.endswith(".js"):
+        module = module[:-3]
 
       dash_index = module_name.find('-')
       while dash_index > 0:
