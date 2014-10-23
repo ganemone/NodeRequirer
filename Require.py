@@ -78,30 +78,32 @@ class RequireCommand(sublime_plugin.TextCommand):
 class RequireInsertHelperCommand(sublime_plugin.TextCommand):
   def run(self, edit, args):
     module = args['module'];
-    module_name = os.path.basename(module)
-    extension_index = module_name.find('.')
-    extension = ''
-    if extension_index > 0:
-      extension = module_name[:-extension_index]
-      module_name = module_name[:extension_index]
+    aliases = PluginUtils.get_pref('alias')
 
+    if module in aliases:
+      module_name = aliases[module]
+    else:
+      module_name = os.path.basename(module)
+      module_name, extension = os.path.splitext(module_name)
+      if module_name == 'index':
+        module_name = os.path.split(os.path.dirname(module))[-1]
+        if module_name == '':
+          module_name = os.path.split(os.path.dirname(self.view.file_name()))[-1]
 
-    if 'models' in module:
-      module_name = module_name.capitalize()
-
-    if 'collections' in module:
-      module_name = module_name.capitalize()
-
-    if module_name == 'index':
-      temp_module = module[:5 + len(extension) + 1]
-      module_name = os.path.basename(temp_module)
-
-
-    dash_index = module_name.find('-')
-    while dash_index > 0:
-      module_name = "%s%s" % (module_name[:dash_index].capitalize(), module_name[dash_index + 1:].capitalize())
       dash_index = module_name.find('-')
+      while dash_index > 0:
+        module_name = "%s%s" % (module_name[:dash_index].capitalize(), module_name[dash_index + 1:].capitalize())
+        dash_index = module_name.find('-')
 
-    text_to_insert = "var %s = require('%s');" % (module_name, module)
+    quote = "'" if PluginUtils.get_pref('quotes') == 'single' else '"'
+    text_to_insert = 'var {name} = require({quote}{path}{quote});'.format(name=module_name, path=module, quote=quote)
 
     self.view.insert(edit, args['position'], text_to_insert)
+
+# Taken from Sublime JSHint Gutter
+SETTINGS_FILE = "Require.sublime-settings"
+
+class PluginUtils:
+  @staticmethod
+  def get_pref(key):
+    return sublime.load_settings(SETTINGS_FILE).get(key)
