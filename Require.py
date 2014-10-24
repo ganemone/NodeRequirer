@@ -100,8 +100,13 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
         module_name = "%s%s" % (module_name[:dash_index].capitalize(), module_name[dash_index + 1:].capitalize())
         dash_index = module_name.find('-')
 
+
+    line = self.view.substr(self.view.line(self.view.sel()[0]))
     quote = "'" if PluginUtils.get_pref('quotes') == 'single' else '"'
-    text_to_insert = 'var {name} = require({quote}{path}{quote});'.format(name=module_name, path=module, quote=quote)
+
+    text_to_insert = 'require({quote}{path}{quote})'.format(path=module, quote=quote)
+    if ':' not in line:
+      text_to_insert = 'var {name} = {require};'.format(name=module_name, require=text_to_insert)
 
     self.view.insert(edit, args['position'], text_to_insert)
 
