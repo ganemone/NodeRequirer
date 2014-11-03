@@ -97,11 +97,11 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
         else:
             module_name = os.path.basename(module)
             module_name, extension = os.path.splitext(module_name)
-            if module_name == 'index':
+            if module.endswith('/index.js'):
                 module_name = os.path.split(os.path.dirname(module))[-1]
-                if module_name == '':
-                    current_file = self.view.file_name()
-                    directory = os.path.dirname(current_file)
+                module = module[:-9]
+                if module_name == '' or '.' in module_name:
+                    directory = os.path.dirname(self.view.file_name())
                     module_name = os.path.split(directory)[-1]
 
             if module.endswith(".js"):
