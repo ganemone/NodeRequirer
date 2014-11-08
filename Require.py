@@ -3,7 +3,6 @@ import sublime_plugin
 import os
 import json
 import re
-from os import path
 
 has_rel_path = re.compile("\.?\.?\/")
 
@@ -44,7 +43,7 @@ class RequireCommand(sublime_plugin.TextCommand):
 
     def load_file_list(self):
         self.parse_package_json()
-        dirname = path.dirname(self.view.file_name())
+        dirname = os.path.dirname(self.view.file_name())
         walk = os.walk(self.project_folder)
         for root, dirs, files in walk:
             if 'node_modules' in dirs:
@@ -54,9 +53,9 @@ class RequireCommand(sublime_plugin.TextCommand):
             for file_name in files:
                 if file_name[0] is not '.':
                     file_name = "%s/%s" % (root, file_name)
-                    file_name = path.relpath(file_name, dirname)
+                    file_name = os.path.relpath(file_name, dirname)
 
-                    if file_name == path.basename(self.view.file_name()):
+                    if file_name == os.path.basename(self.view.file_name()):
                         continue
 
                     if not has_rel_path.match(file_name):
@@ -65,7 +64,7 @@ class RequireCommand(sublime_plugin.TextCommand):
                 self.files.append(file_name)
 
     def parse_package_json(self):
-        package = path.join(self.project_folder, 'package.json')
+        package = os.path.join(self.project_folder, 'package.json')
         package_json = json.load(open(package, 'r'))
         dependencyTypes = (
             'dependencies',
@@ -96,14 +95,14 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
         if module in aliases:
             module_name = aliases[module]
         else:
-            module_name = path.basename(module)
-            module_name, extension = path.splitext(module_name)
-            if module.endswith('/index.js'):
-                module_name = path.split(path.dirname(module))[-1]
-                module = module[:-9]
-                if module_name == '' or '.' in module_name:
-                    directory = path.dirname(self.view.file_name())
-                    module_name = path.split(directory)[-1]
+            module_name = os.path.basename(module)
+            module_name, extension = os.path.splitext(module_name)
+            if module_name == 'index':
+                module_name = os.path.split(os.path.dirname(module))[-1]
+                if module_name == '':
+                    current_file = self.view.file_name()
+                    directory = os.path.dirname(current_file)
+                    module_name = os.path.split(directory)[-1]
 
             if module.endswith(".js"):
                 module = module[:-3]
@@ -135,6 +134,8 @@ class RequireSnippet():
             path=self.path,
             quote=self.quotes
         )
+        if os.name == "nt":
+            formatted_code = formatted_code.replace("\\", "/")
         if self.should_add_var:
             formatted_code = 'var ${{1:{name}}} = {require};'.format(
                 name=self.name,
