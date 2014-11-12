@@ -116,7 +116,7 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
 
         line = self.view.substr(self.view.line(self.view.sel()[0]))
         quotes = "'" if PluginUtils.get_pref('quotes') == 'single' else '"'
-        should_add_var = (':' not in line)
+        should_add_var = (':' not in line and '=' not in line)
 
         snippet = RequireSnippet(module_name, module, quotes, should_add_var)
         self.view.run_command('insert_snippet', snippet.get_args())
