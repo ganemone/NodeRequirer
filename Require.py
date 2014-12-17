@@ -86,7 +86,6 @@ class RequireCommand(sublime_plugin.TextCommand):
                 }
             })
 
-
 class RequireInsertHelperCommand(sublime_plugin.TextCommand):
     def run(self, edit, args):
         module = args['module']
@@ -97,14 +96,15 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
         else:
             module_name = os.path.basename(module)
             module_name, extension = os.path.splitext(module_name)
-            if module_name == 'index':
+
+            if module_name == 'index' and extension == ".js":
                 module_name = os.path.split(os.path.dirname(module))[-1]
+                module = module[:-9]
                 if module_name == '':
                     current_file = self.view.file_name()
                     directory = os.path.dirname(current_file)
                     module_name = os.path.split(directory)[-1]
-
-            if module.endswith(".js"):
+            elif module.endswith(".js"):
                 module = module[:-3]
 
             dash_index = module_name.find('-')
