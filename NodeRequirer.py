@@ -4,8 +4,8 @@ import os
 import json
 import re
 
-has_rel_path = re.compile("\.?\.?\/")
-
+HAS_REL_PATH_RE = re.compile(r"\.?\.?\/")
+WORD_SPLIT_RE = re.compile(r"\W+")
 
 class RequireCommand(sublime_plugin.TextCommand):
     def run(self, edit):
@@ -79,7 +79,7 @@ class RequireCommand(sublime_plugin.TextCommand):
                     if file_name == os.path.basename(self.view.file_name()):
                         continue
 
-                    if not has_rel_path.match(file_name):
+                    if not HAS_REL_PATH_RE.match(file_name):
                         file_name = "./%s" % file_name
 
                 self.files.append(file_name)
@@ -139,20 +139,27 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
 
         quotes = "'" if PluginUtils.get_pref('quotes') == 'single' else '"'
 
-        def get_last_bracket(text):
+        def get_last_opened_bracket(text):
+            counts = [(pair, text.count(pair[0]) - text.count(pair[1]))
+                      for pair in ('()', '[]', '{}')]
+
             last_idx = -1
             last_bracket = None
-            for bracket in '(){}[]':
-                idx = text.rfind(bracket)
-                if idx > last_idx:
-                    (last_idx, last_bracket) = (idx, bracket)
+            for pair, count in counts:
+                idx = text.rfind(pair[0])
+                if idx > last_idx and count > 0:
+                    (last_idx, last_bracket) = (idx, pair[0])
             return last_bracket
 
         cursor = view.sel()[0]
         prev_text = view.substr(sublime.Region(0, cursor.begin())).strip()
-        last_bracket = get_last_bracket(prev_text)
-        in_brackets = last_bracket == '(' or last_bracket == '['
-        should_add_var_statement = not prev_text.endswith(',')
+        last_bracket = get_last_opened_bracket(prev_text)
+        in_brackets = last_bracket in ('(', '[')
+        last_word = re.split(WORD_SPLIT_RE, prev_text)[-1]
+        should_add_var_statement = (
+            not prev_text.endswith(',') and
+            not last_word in ('var', 'let')
+        )
         should_add_var = (not prev_text.endswith((':', '=')) and
                           not in_brackets)
 
