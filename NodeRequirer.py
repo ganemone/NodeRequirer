@@ -35,11 +35,32 @@ class RequireCommand(sublime_plugin.TextCommand):
             'vm',
             'zlib'
         ]
+
         project_data = sublime.active_window().project_data()
-        self.project_folder = project_data['folders'][0]['path']
+        project_folder = None
+
+        if project_data:
+            first_folder = project_data['folders'][0]['path']
+            if os.path.exists(os.path.join(first_folder, 'package.json')):
+                project_folder = first_folder
+        
+        if not project_folder:
+            project_folder = self.find_project_folder()
+
+        self.project_folder = project_folder
         self.load_file_list()
 
         sublime.active_window().show_quick_panel(self.files, self.insert)
+
+    def find_project_folder(self):
+        dirname = os.path.dirname(self.view.file_name())
+        while dirname:
+            if os.path.exists(os.path.join(dirname, 'package.json')):
+                return dirname
+            parent = os.path.abspath(os.path.join(dirname, os.pardir))
+            if parent == dirname:
+                break
+            dirname = parent
 
     def load_file_list(self):
         self.parse_package_json()
@@ -90,6 +111,8 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
     def run(self, edit, args):
         module = args['module']
         aliases = PluginUtils.get_pref('alias')
+        omit_extensions = PluginUtils.get_pref('omit_extensions')
+        view = self.view
 
         if module in aliases:
             module_name = aliases[module]
@@ -98,14 +121,14 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
             module_name, extension = os.path.splitext(module_name)
 
             if module_name == 'index' and extension == ".js":
-                module_name = os.path.split(os.path.dirname(module))[-1]
-                module = module[:-9]
+                module = os.path.dirname(module)
+                module_name = os.path.split(module)[-1]
                 if module_name == '':
-                    current_file = self.view.file_name()
+                    current_file = view.file_name()
                     directory = os.path.dirname(current_file)
                     module_name = os.path.split(directory)[-1]
-            elif module.endswith(".js"):
-                module = module[:-3]
+            elif omit_extensions and module.endswith(tuple(omit_extensions)):
+                module = os.path.splitext(module)[0]
 
             dash_index = module_name.find('-')
             while dash_index > 0:
@@ -114,34 +137,56 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
                 module_name = '{fst}{snd}'.format(fst=first, snd=second)
                 dash_index = module_name.find('-')
 
-        line = self.view.substr(self.view.line(self.view.sel()[0]))
         quotes = "'" if PluginUtils.get_pref('quotes') == 'single' else '"'
-        should_add_var = (':' not in line and '=' not in line)
 
-        snippet = RequireSnippet(module_name, module, quotes, should_add_var)
-        self.view.run_command('insert_snippet', snippet.get_args())
+        def get_last_bracket(text):
+            last_idx = -1
+            last_bracket = None
+            for bracket in '(){}[]':
+                idx = text.rfind(bracket)
+                if idx > last_idx:
+                    (last_idx, last_bracket) = (idx, bracket)
+            return last_bracket
+
+        cursor = view.sel()[0]
+        prev_text = view.substr(sublime.Region(0, cursor.begin())).strip()
+        last_bracket = get_last_bracket(prev_text)
+        in_brackets = last_bracket == '(' or last_bracket == '['
+        should_add_var_statement = not prev_text.endswith(',')
+        should_add_var = (not prev_text.endswith((':', '=')) and
+                          not in_brackets)
+
+        if os.sep != '/':
+            module = module.replace(os.sep, '/')
+
+        snippet = RequireSnippet(module_name, module, quotes,
+                                 should_add_var, should_add_var_statement)
+        view.run_command('insert_snippet', snippet.get_args())
 
 
 class RequireSnippet():
-    def __init__(self, name, path, quotes, should_add_var=True):
+    def __init__(self, name, path, quotes,
+                 should_add_var, should_add_var_statement):
         self.name = name
         self.path = path
         self.quotes = quotes
         self.should_add_var = should_add_var
+        self.should_add_var_statement = should_add_var_statement
 
     def get_formatted_code(self):
-        formatted_code = 'require({quote}{path}{quote})'.format(
+        if self.should_add_var:
+            if self.should_add_var_statement:
+                require_fmt = 'var ${{1:{name}}} = require({quote}{path}{quote});'
+            else:
+                require_fmt = '${{1:{name}}} = require({quote}{path}{quote})'
+        else:
+            require_fmt = 'require({quote}{path}{quote})'
+        
+        return require_fmt.format(
+            name=self.name,
             path=self.path,
             quote=self.quotes
         )
-        if os.name == "nt":
-            formatted_code = formatted_code.replace("\\", "/")
-        if self.should_add_var:
-            formatted_code = 'var ${{1:{name}}} = {require};'.format(
-                name=self.name,
-                require=formatted_code
-            )
-        return formatted_code
 
     def get_args(self):
         return {
@@ -149,7 +194,7 @@ class RequireSnippet():
         }
 
 # Taken from Sublime JSHint Gutter
-SETTINGS_FILE = "Require.sublime-settings"
+SETTINGS_FILE = "NodeRequirer.sublime-settings"
 
 
 class PluginUtils:

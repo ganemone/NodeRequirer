@@ -4,12 +4,22 @@
     "id": "package-settings",
     "children": [{
       "caption": "Node Require",
-      "children": [{
-        "caption": "Set Plugin Options",
-        "command": "open_file", "args": {
-          "file": "${packages}/NodeRequirer/Require.sublime-settings"
+      "children": [
+        {
+          "caption": "Settings - Default",
+          "command": "open_file",
+          "args": {
+            "file": "${packages}/NodeRequirer/NodeRequirer.sublime-settings"
+          }
+        },
+        {
+          "caption": "Settings - User",
+          "command": "open_file",
+          "args": {
+            "file": "${packages}/User/NodeRequirer.sublime-settings"
+          }
         }
-      }]
+      ]
     }]
   }]
 }]
