@@ -35,5 +35,6 @@
         "zepto": "$"
     },
     // Use 'single' or "double" quotes
-    "quotes": "single"
+    "quotes": "single",
+    "omit_extensions": ["js"]
 }
