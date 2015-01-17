@@ -21,6 +21,26 @@ var Person = require('../../models/person.js');
 var MovieStar = require('../../movie-star.js');
 ```
 
+## Options
+
+`NodeRequirer` exposes several useful plugin options for configuring aliases, import modes and quotes. These are available under `Preferences -> Package Settings -> Node Require` or search for `NodeRequirer: Set plugin options`
+
+Example `User Plugin Preferences`
+
+```json
+{
+    // Use double quotes
+    "quotes": "double",
+    // Default to ES6 import format, when syntactically correct
+    "import": true,
+
+    "alias": {
+        // <module name>: <variable name>
+        "underscore": "_"
+    }
+}
+```
+
 ## Installation
 ### Through [Sublime Package Manager](http://wbond.net/sublime_packages/package_control)
 
