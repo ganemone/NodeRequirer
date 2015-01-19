@@ -179,15 +179,15 @@ class RequireSnippet():
         self.quotes = quotes
         self.should_add_var = should_add_var
         self.should_add_var_statement = should_add_var_statement
+        self.es6import = PluginUtils.get_pref('import')
 
     def get_formatted_code(self):
+        require_fmt = 'require({quote}{path}{quote})'
+
         if self.should_add_var:
+            require_fmt = '${{1:{name}}} = ' + require_fmt
             if self.should_add_var_statement:
-                require_fmt = 'var ${{1:{name}}} = require({quote}{path}{quote});'
-            else:
-                require_fmt = '${{1:{name}}} = require({quote}{path}{quote})'
-        else:
-            require_fmt = 'require({quote}{path}{quote})'
+                require_fmt = 'import ${{1:{name}}} from {quote}{path}{quote};' if self.es6import else 'var ' + require_fmt
         
         return require_fmt.format(
             name=self.name,
