@@ -158,7 +158,7 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
         last_word = re.split(WORD_SPLIT_RE, prev_text)[-1]
         should_add_var_statement = (
             not prev_text.endswith(',') and
-            not last_word in ('var', 'let')
+            not last_word in ('var', 'const', 'let')
         )
         should_add_var = (not prev_text.endswith((':', '=')) and
                           not in_brackets)
@@ -181,7 +181,7 @@ class RequireSnippet():
         self.should_add_var_statement = should_add_var_statement
         self.es6import = PluginUtils.get_pref('import')
         self.var_type = PluginUtils.get_pref('var')
-        if self.var_type not in ('var', 'let'):
+        if self.var_type not in ('var', 'const', 'let'):
             self.var_type = 'var'
 
     def get_formatted_code(self):
