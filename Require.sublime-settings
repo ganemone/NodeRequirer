@@ -34,7 +34,8 @@
         "three": "THREE",
         "q": "Q",
         "qunit": "QUnit",
-        "zepto": "$"
+        "zepto": "$",
+        "graceful-fs": "fs"
     },
 
     // Use 'single' or "double" quotes
