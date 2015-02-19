@@ -40,6 +40,9 @@
     // Use 'single' or "double" quotes
     "quotes": "single",
 
+    // Use 'var' or 'let' variable declarations
+    "var": "let",
+
     // Default to using es6 imports, e.g.
     // import _ from 'lodash';
     "import": false

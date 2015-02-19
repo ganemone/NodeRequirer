@@ -36,5 +36,7 @@
     },
     // Use 'single' or "double" quotes
     "quotes": "single",
+    // Use 'var' or 'let' variable declarations
+    "var": "let",
     "omit_extensions": ["js"]
 }
