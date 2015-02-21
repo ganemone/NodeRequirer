@@ -190,14 +190,21 @@ class RequireSnippet():
             self.var_type = 'var'
 
     def get_formatted_code(self):
-        require_fmt = 'require({quote}{path}{quote})'
+        require_fmt = 'require({quote}{path}{quote});'
+        import_fmt = 'import ${{1:{name}}} ${{2:as ${{3:somename}}}}'
+        import_fmt += ' from {quote}{path}{quote};'
+        fmt = None
 
-        if self.should_add_var:
-            require_fmt = '${{1:{name}}} = ' + require_fmt
+        if self.es6import:
+            fmt = import_fmt
+        elif self.should_add_var:
+            fmt = '${{1:{name}}} = ' + require_fmt
             if self.should_add_var_statement:
-                require_fmt = 'import ${{1:{name}}} from {quote}{path}{quote};' if self.es6import else self.var_type + ' ' + require_fmt
-        
-        return require_fmt.format(
+                fmt = self.var_type + ' ' + fmt
+        else:
+            fmt = require_fmt
+
+        return fmt.format(
             name=self.name,
             path=self.path,
             quote=self.quotes
