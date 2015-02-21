@@ -7,7 +7,9 @@ import re
 HAS_REL_PATH_RE = re.compile(r"\.?\.?\/")
 WORD_SPLIT_RE = re.compile(r"\W+")
 
+
 class RequireCommand(sublime_plugin.TextCommand):
+
     def run(self, edit):
         self.files = [
             'assert',
@@ -43,7 +45,7 @@ class RequireCommand(sublime_plugin.TextCommand):
             first_folder = project_data['folders'][0]['path']
             if os.path.exists(os.path.join(first_folder, 'package.json')):
                 project_folder = first_folder
-        
+
         if not project_folder:
             project_folder = self.find_project_folder()
 
@@ -87,14 +89,14 @@ class RequireCommand(sublime_plugin.TextCommand):
     def parse_package_json(self):
         package = os.path.join(self.project_folder, 'package.json')
         package_json = json.load(open(package, 'r'))
-        dependencyTypes = (
+        dependency_types = (
             'dependencies',
             'devDependencies',
             'optionalDependencies'
         )
-        for dependencyType in dependencyTypes:
-            if dependencyType in package_json:
-                self.files += package_json[dependencyType].keys()
+        for dependency_type in dependency_types:
+            if dependency_type in package_json:
+                self.files += package_json[dependency_type].keys()
 
     def insert(self, index):
         if index >= 0:
@@ -107,7 +109,9 @@ class RequireCommand(sublime_plugin.TextCommand):
                 }
             })
 
+
 class RequireInsertHelperCommand(sublime_plugin.TextCommand):
+
     def run(self, edit, args):
         module = args['module']
         aliases = PluginUtils.get_pref('alias')
@@ -158,7 +162,7 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
         last_word = re.split(WORD_SPLIT_RE, prev_text)[-1]
         should_add_var_statement = (
             not prev_text.endswith(',') and
-            not last_word in ('var', 'const', 'let')
+            last_word not in ('var', 'const', 'let')
         )
         should_add_var = (not prev_text.endswith((':', '=')) and
                           not in_brackets)
@@ -172,6 +176,7 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
 
 
 class RequireSnippet():
+
     def __init__(self, name, path, quotes,
                  should_add_var, should_add_var_statement):
         self.name = name
@@ -185,14 +190,21 @@ class RequireSnippet():
             self.var_type = 'var'
 
     def get_formatted_code(self):
-        require_fmt = 'require({quote}{path}{quote})'
+        require_fmt = 'require({quote}{path}{quote});'
+        import_fmt = 'import ${{1:{name}}} ${{2:as ${{3:somename}}}}'
+        import_fmt += ' from {quote}{path}{quote};'
+        fmt = None
 
-        if self.should_add_var:
-            require_fmt = '${{1:{name}}} = ' + require_fmt
+        if self.es6import:
+            fmt = import_fmt
+        elif self.should_add_var:
+            fmt = '${{1:{name}}} = ' + require_fmt
             if self.should_add_var_statement:
-                require_fmt = 'import ${{1:{name}}} from {quote}{path}{quote};' if self.es6import else self.var_type + ' ' + require_fmt
-        
-        return require_fmt.format(
+                fmt = self.var_type + ' ' + fmt
+        else:
+            fmt = require_fmt
+
+        return fmt.format(
             name=self.name,
             path=self.path,
             quote=self.quotes
@@ -208,6 +220,7 @@ SETTINGS_FILE = "NodeRequirer.sublime-settings"
 
 
 class PluginUtils:
+
     @staticmethod
     def get_pref(key):
         return sublime.load_settings(SETTINGS_FILE).get(key)
