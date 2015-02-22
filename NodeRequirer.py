@@ -140,6 +140,7 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
         view.run_command('insert_snippet', snippet.get_args())
 
     def get_last_opened_bracket(self, text):
+        """Return the last open bracket before the current cursor position"""
         counts = [(pair, text.count(pair[0]) - text.count(pair[1]))
                   for pair in ('()', '[]', '{}')]
 
