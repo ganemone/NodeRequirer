@@ -4,6 +4,10 @@ import os
 import json
 import re
 
+from .src.utils import get_pref
+from .src.RequireSnippet import RequireSnippet
+from .src.modules import core_modules
+
 HAS_REL_PATH_RE = re.compile(r"\.?\.?\/")
 WORD_SPLIT_RE = re.compile(r"\W+")
 
@@ -11,33 +15,7 @@ WORD_SPLIT_RE = re.compile(r"\W+")
 class RequireCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
-        self.files = [
-            'assert',
-            'buffer',
-            'cluster',
-            'child_process',
-            'crypto',
-            'dgram',
-            'dns',
-            'domain',
-            'events',
-            'fs',
-            'http',
-            'https',
-            'net',
-            'os',
-            'path',
-            'punycode',
-            'readline',
-            'stream',
-            'string_decoder',
-            'tls',
-            'url',
-            'util',
-            'vm',
-            'zlib'
-        ]
-
+        self.files = core_modules
         project_data = sublime.active_window().project_data()
         project_folder = None
 
@@ -119,7 +97,7 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
         module_path = module_info['module_path']
         module_name = module_info['module_name']
 
-        quotes = "'" if PluginUtils.get_pref('quotes') == 'single' else '"'
+        quotes = "'" if get_pref('quotes') == 'single' else '"'
 
         view = self.view
 
@@ -157,8 +135,8 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
         In the case that the module is a node core module, the module_path and
         module_name are the same."""
 
-        aliases = PluginUtils.get_pref('alias')
-        omit_extensions = PluginUtils.get_pref('omit_extensions')
+        aliases = get_pref('alias')
+        omit_extensions = get_pref('omit_extensions')
 
         if module_path in aliases:
             module_name = aliases[module_path]
@@ -196,54 +174,3 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
             'module_path': module_path,
             'module_name': module_name
         }
-
-
-class RequireSnippet():
-
-    def __init__(self, name, path, quotes,
-                 should_add_var, should_add_var_statement):
-        self.name = name
-        self.path = path
-        self.quotes = quotes
-        self.should_add_var = should_add_var
-        self.should_add_var_statement = should_add_var_statement
-        self.es6import = PluginUtils.get_pref('import')
-        self.var_type = PluginUtils.get_pref('var')
-        if self.var_type not in ('var', 'const', 'let'):
-            self.var_type = 'var'
-
-    def get_formatted_code(self):
-        require_fmt = 'require({quote}{path}{quote});'
-        import_fmt = 'import ${{1:{name}}} ${{2:as ${{3:somename}}}}'
-        import_fmt += ' from {quote}{path}{quote};'
-        fmt = None
-
-        if self.es6import:
-            fmt = import_fmt
-        elif self.should_add_var:
-            fmt = '${{1:{name}}} = ' + require_fmt
-            if self.should_add_var_statement:
-                fmt = self.var_type + ' ' + fmt
-        else:
-            fmt = require_fmt
-
-        return fmt.format(
-            name=self.name,
-            path=self.path,
-            quote=self.quotes
-        )
-
-    def get_args(self):
-        return {
-            'contents': self.get_formatted_code()
-        }
-
-# Taken from Sublime JSHint Gutter
-SETTINGS_FILE = "NodeRequirer.sublime-settings"
-
-
-class PluginUtils:
-
-    @staticmethod
-    def get_pref(key):
-        return sublime.load_settings(SETTINGS_FILE).get(key)
