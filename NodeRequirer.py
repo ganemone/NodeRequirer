@@ -113,51 +113,19 @@ class RequireCommand(sublime_plugin.TextCommand):
 class RequireInsertHelperCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, args):
-        module = args['module']
-        aliases = PluginUtils.get_pref('alias')
-        omit_extensions = PluginUtils.get_pref('omit_extensions')
-        view = self.view
+        """Insert the require statement after the module has been choosen"""
 
-        if module in aliases:
-            module_name = aliases[module]
-        else:
-            module_name = os.path.basename(module)
-            module_name, extension = os.path.splitext(module_name)
-
-            if module_name == 'index' and extension == ".js":
-                module = os.path.dirname(module)
-                module_name = os.path.split(module)[-1]
-                if module_name == '':
-                    current_file = view.file_name()
-                    directory = os.path.dirname(current_file)
-                    module_name = os.path.split(directory)[-1]
-            elif omit_extensions and module.endswith(tuple(omit_extensions)):
-                module = os.path.splitext(module)[0]
-
-            dash_index = module_name.find('-')
-            while dash_index > 0:
-                first = module_name[:dash_index].capitalize()
-                second = module_name[dash_index + 1:].capitalize()
-                module_name = '{fst}{snd}'.format(fst=first, snd=second)
-                dash_index = module_name.find('-')
+        module_info = self.get_module_info(args['module'])
+        module_path = module_info['module_path']
+        module_name = module_info['module_name']
 
         quotes = "'" if PluginUtils.get_pref('quotes') == 'single' else '"'
 
-        def get_last_opened_bracket(text):
-            counts = [(pair, text.count(pair[0]) - text.count(pair[1]))
-                      for pair in ('()', '[]', '{}')]
-
-            last_idx = -1
-            last_bracket = None
-            for pair, count in counts:
-                idx = text.rfind(pair[0])
-                if idx > last_idx and count > 0:
-                    (last_idx, last_bracket) = (idx, pair[0])
-            return last_bracket
+        view = self.view
 
         cursor = view.sel()[0]
         prev_text = view.substr(sublime.Region(0, cursor.begin())).strip()
-        last_bracket = get_last_opened_bracket(prev_text)
+        last_bracket = self.get_last_opened_bracket(prev_text)
         in_brackets = last_bracket in ('(', '[')
         last_word = re.split(WORD_SPLIT_RE, prev_text)[-1]
         should_add_var_statement = (
@@ -167,12 +135,66 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
         should_add_var = (not prev_text.endswith((':', '=')) and
                           not in_brackets)
 
-        if os.sep != '/':
-            module = module.replace(os.sep, '/')
-
-        snippet = RequireSnippet(module_name, module, quotes,
+        snippet = RequireSnippet(module_name, module_path, quotes,
                                  should_add_var, should_add_var_statement)
         view.run_command('insert_snippet', snippet.get_args())
+
+    def get_last_opened_bracket(self, text):
+        counts = [(pair, text.count(pair[0]) - text.count(pair[1]))
+                  for pair in ('()', '[]', '{}')]
+
+        last_idx = -1
+        last_bracket = None
+        for pair, count in counts:
+            idx = text.rfind(pair[0])
+            if idx > last_idx and count > 0:
+                (last_idx, last_bracket) = (idx, pair[0])
+        return last_bracket
+
+    def get_module_info(self, module_path):
+        """Gets a dictionary with keys for the module_path and the module_name.
+        In the case that the module is a node core module, the module_path and
+        module_name are the same."""
+
+        aliases = PluginUtils.get_pref('alias')
+        omit_extensions = PluginUtils.get_pref('omit_extensions')
+
+        if module_path in aliases:
+            module_name = aliases[module_path]
+        else:
+            module_name = os.path.basename(module_path)
+            module_name, extension = os.path.splitext(module_name)
+
+            # When requiring an index.js file, rename the
+            # var as the directory directly above
+            if module_name == 'index' and extension == ".js":
+                module_path = os.path.dirname(module_path)
+                module_name = os.path.split(module_path)[-1]
+                if module_name == '':
+                    current_file = view.file_module_name()
+                    directory = os.path.dirname(current_file)
+                    module_name = os.path.split(directory)[-1]
+            # Depending on preferences, remove the file extension
+            elif omit_extensions and module_path.endswith(tuple(omit_extensions)):
+                module_path = os.path.splitext(module_path)[0]
+
+            # Capitalize modules named with dashes
+            # i.e. some-thing => SomeThing
+            dash_index = module_name.find('-')
+            while dash_index > 0:
+                first = module_name[:dash_index].capitalize()
+                second = module_name[dash_index + 1:].capitalize()
+                module_name = '{fst}{snd}'.format(fst=first, snd=second)
+                dash_index = module_name.find('-')
+
+        # Fix paths for windows
+        if os.sep != '/':
+            module_path = module_path.replace(os.sep, '/')
+
+        return {
+            'module_path': module_path,
+            'module_name': module_name
+        }
 
 
 class RequireSnippet():
