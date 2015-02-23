@@ -15,19 +15,21 @@ class RequireSnippet():
             self.var_type = 'var'
 
     def get_formatted_code(self):
+        should_use_snippet = self.should_use_snippet()
         require_fmt = 'require({quote}{path}{quote});'
-        import_fmt = 'import ${{1:{name}}} ${{2:as ${{3:somename}}}}'
-        import_fmt += ' from {quote}{path}{quote};'
-        fmt = None
+        import_fmt = 'import {name} from {quote}{path}{quote}'
 
-        if self.es6import:
-            fmt = import_fmt
+        if should_use_snippet:
+            import_fmt = 'import ${{1:{name}}} ${{2:as ${{3:somename}}}}'
+            import_fmt += ' from {quote}{path}{quote};'
+            if self.should_add_var:
+                require_fmt = '${{1:{name}}} = ' + require_fmt
         elif self.should_add_var:
-            fmt = '${{1:{name}}} = ' + require_fmt
+            require_fmt = '{name} = ' + require_fmt
             if self.should_add_var_statement:
-                fmt = self.var_type + ' ' + fmt
-        else:
-            fmt = require_fmt
+                require_fmt = self.var_type + ' ' + require_fmt
+
+        fmt = import_fmt if self.es6import else require_fmt
 
         return fmt.format(
             name=self.name,
@@ -39,3 +41,6 @@ class RequireSnippet():
         return {
             'contents': self.get_formatted_code()
         }
+
+    def should_use_snippet(self):
+        return get_pref('snippet')

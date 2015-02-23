@@ -41,5 +41,10 @@
     "quotes": "single",
     // Use 'var', 'const', or 'let' variable declarations
     "var": "var",
-    "omit_extensions": ["js"]
+    "omit_extensions": ["js"],
+    // Use ES6 Import Style
+    // i.e. import module from module
+    "import": false,
+    // Allow for tab completion through require statement
+    "snippets": true,
 }
