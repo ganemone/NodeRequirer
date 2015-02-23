@@ -1,4 +1,10 @@
-[{
-  "keys": ["ctrl+shift+i"],
-  "command": "require"
-}]
+[
+  {
+    "keys": ["ctrl+shift+i"],
+    "command": "simple_require"
+  },
+  {
+    "keys": ["ctrl+shift+e"],
+    "command": "export_require"
+  }
+]

@@ -1,9 +1,17 @@
-[{
-  "caption": "Require",
-  "command": "require"
-}, {
-  "caption": "NodeRequirer: Set Plugin Options",
-  "command": "open_file", "args": {
-    "file": "${packages}/User/NodeRequirer.sublime-settings"
+[
+  {
+    "caption": "Require",
+    "command": "simple_require",
+  },
+  {
+    "caption": "Require Specific Export",
+    "command": "export_require"
+  },
+  {
+    "caption": "NodeRequirer: Set Plugin Options",
+    "command": "open_file",
+    "args": {
+      "file": "${packages}/User/NodeRequirer.sublime-settings"
+    }
   }
-}]
+]

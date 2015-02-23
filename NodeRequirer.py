@@ -11,11 +11,16 @@ from .src.modules import core_modules
 HAS_REL_PATH_RE = re.compile(r"\.?\.?\/")
 WORD_SPLIT_RE = re.compile(r"\W+")
 
-
 class RequireCommand(sublime_plugin.TextCommand):
 
-    def run(self, edit):
-        self.files = core_modules
+    def run(self, edit, command):
+        if command is 'simple':
+            self.files = core_modules
+            func = self.insert
+        else:
+            self.files = []
+            func = self.parse_exports
+
         project_data = sublime.active_window().project_data()
         project_folder = None
 
@@ -30,7 +35,7 @@ class RequireCommand(sublime_plugin.TextCommand):
         self.project_folder = project_folder
         self.load_file_list()
 
-        sublime.active_window().show_quick_panel(self.files, self.insert)
+        sublime.active_window().show_quick_panel(self.files, func)
 
     def find_project_folder(self):
         dirname = os.path.dirname(self.view.file_name())
@@ -86,6 +91,22 @@ class RequireCommand(sublime_plugin.TextCommand):
                     'module': module
                 }
             })
+
+    def parse_exports(self, index):
+        if index >= 0:
+            module = self.files[index]
+            print("module: {0}".format(module))
+
+class SimpleRequireCommand(RequireCommand):
+
+    def run(self, edit):
+        super().run(edit, 'simple')
+
+
+class ExportRequireCommand(RequireCommand):
+
+    def run(self, edit):
+        super().run(edit, 'export')
 
 
 class RequireInsertHelperCommand(sublime_plugin.TextCommand):
