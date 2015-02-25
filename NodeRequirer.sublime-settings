@@ -35,7 +35,8 @@
         "q": "Q",
         "qunit": "QUnit",
         "zepto": "$",
-        "graceful-fs": "fs"
+        "graceful-fs": "fs",
+        "findup-sync": "findup"
     },
     // Use 'single' or "double" quotes
     "quotes": "single",
