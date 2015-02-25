@@ -26,23 +26,20 @@ class RequireCommand(sublime_plugin.TextCommand):
             self.files = []
             func = self.parse_exports
 
-        project_data = sublime.active_window().project_data()
-        project_folder = None
-
-        if project_data:
-            first_folder = project_data['folders'][0]['path']
-            if os.path.exists(os.path.join(first_folder, 'package.json')):
-                project_folder = first_folder
-
-        if not project_folder:
-            project_folder = self.find_project_folder()
-
-        self.project_folder = project_folder
+        self.project_folder = self.get_project_folder()
         self.load_file_list()
 
         sublime.active_window().show_quick_panel(self.files, func)
 
-    def find_project_folder(self):
+    def get_project_folder(self):
+        project_data = sublime.active_window().project_data()
+
+        if project_data:
+            first_folder = project_data['folders'][0]['path']
+            if os.path.exists(os.path.join(first_folder, 'package.json')):
+                return first_folder
+
+        # Walk through directories if we didn't find it easily
         dirname = os.path.dirname(self.view.file_name())
         while dirname:
             if os.path.exists(os.path.join(dirname, 'package.json')):
