@@ -38,14 +38,21 @@
         "graceful-fs": "fs",
         "findup-sync": "findup"
     },
+
     // Use 'single' or "double" quotes
     "quotes": "single",
+
     // Use 'var', 'const', or 'let' variable declarations
     "var": "var",
+
+    // File extensions to omit when doing a local require.
+    // E.g. require('./filename') for ./filename.js if js is omited
     "omit_extensions": ["js"],
+
     // Use ES6 Import Style
     // i.e. import module from module
     "import": false,
+
     // Allow for tab completion through require statement
     "snippets": true,
 }
