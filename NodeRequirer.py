@@ -10,11 +10,11 @@ from .src.modules import core_modules
 
 HAS_REL_PATH_RE = re.compile(r"\.?\.?\/")
 WORD_SPLIT_RE = re.compile(r"\W+")
+IS_EXPORT_LINE = re.compile(r"exports\.(.*?)=")
 
 class RequireCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, command):
-
         # Simple Require Command
         if command is 'simple':
             # Must copy the core modules so modifying self.files
@@ -24,12 +24,14 @@ class RequireCommand(sublime_plugin.TextCommand):
         # Export Command
         else:
             self.files = []
+            self.exports = ['------ Select One or More Options ------']
+            self.selected_exports = []
             func = self.parse_exports
 
         self.project_folder = self.get_project_folder()
         self.load_file_list()
 
-        sublime.active_window().show_quick_panel(self.files, func)
+        sublime.active_window().show_quick_panel(self.files, self.on_done_call_func(self.files, func))
 
     def get_project_folder(self):
         project_data = sublime.active_window().project_data()
@@ -83,29 +85,69 @@ class RequireCommand(sublime_plugin.TextCommand):
             if dependency_type in package_json:
                 self.files += package_json[dependency_type].keys()
 
-    def insert(self, index):
-        if index >= 0:
-            module = self.files[index]
-            position = self.view.sel()[-1].end()
-            self.view.run_command('require_insert_helper', {
-                'args': {
-                    'position': position,
-                    'module': module
-                }
-            })
+    def on_done_call_func(self, choices, func):
+        def on_done(index):
+            if index >= 0:
+                return func(choices[index])
 
-    def parse_exports(self, index):
-        if index >= 0:
-            module = self.files[index]
-            print("module: {0}".format(module))
+        return on_done
+
+    def insert(self, module):
+        position = self.view.sel()[-1].end()
+        self.view.run_command('require_insert_helper', {
+            'args': {
+                'position': position,
+                'module': module
+            }
+        })
+
+    def parse_exports(self, module):
+        f = open(module, 'r')
+        for line in f:
+            result = re.search(IS_EXPORT_LINE, line)
+            if result:
+                self.exports.append(result.group(1))
+
+        if len(self.exports) is 1:
+            return self.insert(module)
+        return self.show_exports()
+
+    def show_exports(self):
+        sublime.set_timeout(
+            lambda: sublime.active_window().show_quick_panel(self.exports, self.on_export_done), 10
+        )
+
+    def on_export_done(self, index):
+        if index > 0:
+            self.exports[0] = '------ Finish Selecting ------'
+            # Add selected export to selected_exports list and
+            # remove it from the list
+            self.selected_exports.append(self.exports.pop(index))
+
+            if len(self.exports) > 1:
+                # Show remaining exports for further selection
+                self.show_exports()
+            elif len(self.selected_exports) > 0:
+                # insert current selected exports
+                self.insert_exports()
+        elif index == 0 and len(self.selected_exports) > 0:
+            # insert current selected exports
+            self.insert_exports()
+
+    def insert_exports(self):
+        print('About to insert exports: {0}'.format(self.selected_exports))
+
+
 
 class SimpleRequireCommand(RequireCommand):
+    """Helper command to call the RequireCommand with the type argument 'simple'"""
 
     def run(self, edit):
         super().run(edit, 'simple')
 
 
 class ExportRequireCommand(RequireCommand):
+    """Helper command to call the RequireCommand with the type argument 'export'"""
 
     def run(self, edit):
         super().run(edit, 'export')
@@ -115,7 +157,6 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, args):
         """Insert the require statement after the module has been choosen"""
-
         module_info = self.get_module_info(args['module'])
         module_path = module_info['module_path']
         module_name = module_info['module_name']
