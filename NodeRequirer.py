@@ -14,9 +14,14 @@ WORD_SPLIT_RE = re.compile(r"\W+")
 class RequireCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, command):
+
+        # Simple Require Command
         if command is 'simple':
-            self.files = core_modules
+            # Must copy the core modules so modifying self.files
+            # does not change the core_modules list
+            self.files = list(core_modules)
             func = self.insert
+        # Export Command
         else:
             self.files = []
             func = self.parse_exports
