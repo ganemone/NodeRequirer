@@ -27,7 +27,7 @@ var MovieStar = require('../../movie-star.js');
 
 Example `User Plugin Preferences`
 
-```json
+```javascript
 {
     // Use double quotes
     "quotes": "double",
