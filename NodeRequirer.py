@@ -4,13 +4,14 @@ import os
 import json
 import re
 
-from .src.utils import get_pref, get_quotes
-from .src.RequireSnippet import RequireSnippet
-from .src.modules import core_modules
+from NodeRequirer.src.utils import get_pref, get_quotes
+from NodeRequirer.src.RequireSnippet import RequireSnippet
+from NodeRequirer.src.modules import core_modules
 
 HAS_REL_PATH_RE = re.compile(r"\.?\.?\/")
 WORD_SPLIT_RE = re.compile(r"\W+")
 IS_EXPORT_LINE = re.compile(r"exports\.(.*?)=")
+
 
 class RequireCommand(sublime_plugin.TextCommand):
 
@@ -31,7 +32,8 @@ class RequireCommand(sublime_plugin.TextCommand):
         self.project_folder = self.get_project_folder()
         self.load_file_list()
 
-        sublime.active_window().show_quick_panel(self.files, self.on_done_call_func(self.files, func))
+        sublime.active_window().show_quick_panel(
+            self.files, self.on_done_call_func(self.files, func))
 
     def get_project_folder(self):
         project_data = sublime.active_window().project_data()
@@ -75,7 +77,7 @@ class RequireCommand(sublime_plugin.TextCommand):
 
     def parse_package_json(self):
         package = os.path.join(self.project_folder, 'package.json')
-        package_json = json.load(open(package, 'r'))
+        package_json = json.load(open(package, 'r', encoding='UTF-8'))
         dependency_types = (
             'dependencies',
             'devDependencies',
@@ -105,7 +107,7 @@ class RequireCommand(sublime_plugin.TextCommand):
         if is_core_module(module):
             return self.parse_core_module_exports()
         elif is_local_file(module):
-            return self.parse_local_module_exports(fpath)
+            return self.parse_exports_in_file(module)
         else:
             return self.parse_dependency_module_exports()
 
@@ -114,7 +116,8 @@ class RequireCommand(sublime_plugin.TextCommand):
 
     def parse_dependency_module_exports(self):
         base_path = './node_modules/' + self.module
-        package = json.load(open(base_path + '/package.json', 'r'))
+        package = json.load(
+            open(base_path + '/package.json', 'r', encoding='UTF-8'))
         main = 'index.js' if 'main' not in package else package['main']
         main_path = os.path.join(base_path, main)
         return self.parse_exports_in_file(main_path)
@@ -126,13 +129,17 @@ class RequireCommand(sublime_plugin.TextCommand):
             if result:
                 self.exports.append(result.group(1).strip())
 
-        if len(self.exports) is 1:
-            return self.insert(self.module)
+        if len(self.exports) <= 1:
+            return sublime.error_message(
+                'Unable to find specific exports. Note: We currently'
+                ' only support parsing commonjs style exporting'
+            )
         return self.show_exports()
 
     def show_exports(self):
         sublime.set_timeout(
-            lambda: sublime.active_window().show_quick_panel(self.exports, self.on_export_done), 10
+            lambda: sublime.active_window().show_quick_panel(
+                self.exports, self.on_export_done), 10
         )
 
     def on_export_done(self, index):
@@ -162,14 +169,18 @@ class RequireCommand(sublime_plugin.TextCommand):
 
 
 class SimpleRequireCommand(RequireCommand):
-    """Helper command to call the RequireCommand with the type argument 'simple'"""
+
+    """Helper command to call the RequireCommand with the
+    type argument 'simple'"""
 
     def run(self, edit):
         super().run(edit, 'simple')
 
 
 class ExportRequireCommand(RequireCommand):
-    """Helper command to call the RequireCommand with the type argument 'export'"""
+
+    """Helper command to call the RequireCommand with the
+    type argument 'export'"""
 
     def run(self, edit):
         super().run(edit, 'export')
@@ -178,8 +189,9 @@ class ExportRequireCommand(RequireCommand):
 class ExportInsertHelperCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, args):
-        """Insert the require statement after the module exports have been choosen"""
-        module_info = get_module_info(args['module'])
+        """Insert the require statement after the module
+        exports have been choosen"""
+        module_info = get_module_info(args['module'], self.view)
         self.path = module_info['module_path']
         self.name = module_info['module_name']
         self.exports = args['exports']
@@ -209,13 +221,18 @@ class ExportInsertHelperCommand(sublime_plugin.TextCommand):
         return self.get_many_exports_standard()
 
     def get_many_exports_destructured(self):
-        require_string = 'var {{{0}'.format(self.exports[0])
-        for x in range(1, len(self.exports) - 1):
-            require_string+= ', {0}'.format(self.exports[x])
-        require_string+= ' } = require({q}{path}{q})'.format(
+        iter_exports = iter(self.exports)
+        first_export = next(iter_exports)
+        require_string = 'var {{{0}'.format(first_export)
+
+        for export in iter_exports:
+            require_string += ', {0}'.format(export)
+
+        require_string += ' }} = require({q}{path}{q});'.format(
             path=self.path,
             q=get_quotes()
         )
+
         return require_string
 
     def get_many_exports_standard(self):
@@ -226,8 +243,9 @@ class ExportInsertHelperCommand(sublime_plugin.TextCommand):
             path=self.path
         )
         for export in self.exports:
-            require_string+= '\n'
-            require_string+= 'var {export} = require({q}{path}{q}).{export};'.format(
+            require_string += '\n'
+            final = 'var {export} = require({q}{path}{q}).{export};'
+            require_string += final.format(
                 export=export,
                 q=quotes,
                 path=self.path
@@ -240,7 +258,7 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, args):
         """Insert the require statement after the module has been choosen"""
-        module_info = get_module_info(args['module'])
+        module_info = get_module_info(args['module'], self.view)
         module_path = module_info['module_path']
         module_name = module_info['module_name']
 
@@ -277,7 +295,8 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
                 (last_idx, last_bracket) = (idx, pair[0])
         return last_bracket
 
-def get_module_info(module_path):
+
+def get_module_info(module_path, view):
     """Gets a dictionary with keys for the module_path and the module_name.
     In the case that the module is a node core module, the module_path and
     module_name are the same."""
@@ -322,8 +341,10 @@ def get_module_info(module_path):
         'module_name': module_name
     }
 
+
 def is_core_module(module):
     return module in core_modules
 
+
 def is_local_file(module):
-    return '/' in core_modules
+    return '/' in module
