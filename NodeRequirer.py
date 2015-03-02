@@ -101,14 +101,34 @@ class RequireCommand(sublime_plugin.TextCommand):
 
     def parse_exports(self, module):
         self.module = module
-        f = open(module, 'r')
+        # Module is core module
+        if is_core_module(module):
+            return self.parse_core_module_exports()
+        elif is_local_file(module):
+            return self.parse_local_module_exports(fpath)
+        else:
+            return self.parse_dependency_module_exports()
+
+    def parse_core_module_exports(self):
+        print('I dont know how to do this just yet')
+
+    def parse_dependency_module_exports(self):
+        base_path = './node_modules/' + self.module
+        package = json.load(open(base_path + '/package.json', 'r'))
+        main = 'index.js' if 'main' not in package else package['main']
+        main_path = os.path.join(base_path, main)
+        return self.parse_exports_in_file(main_path)
+
+    def parse_exports_in_file(self, fpath):
+        f = open(fpath, 'r')
         for line in f:
+            print('Looking at Line: {0}'.format(line))
             result = re.search(IS_EXPORT_LINE, line)
             if result:
                 self.exports.append(result.group(1).strip())
 
         if len(self.exports) is 1:
-            return self.insert(module)
+            return self.insert(self.module)
         return self.show_exports()
 
     def show_exports(self):
@@ -181,7 +201,7 @@ class ExportInsertHelperCommand(sublime_plugin.TextCommand):
             export=self.exports[0],
             q=get_quotes(),
             path=self.path
-        );
+        )
 
     def get_many_exports_content(self):
         quotes = get_quotes()
@@ -286,3 +306,9 @@ def get_module_info(module_path):
         'module_path': module_path,
         'module_name': module_name
     }
+
+def is_core_module(module):
+    return module in core_modules
+
+def is_local_file(module):
+    return '/' in core_modules
