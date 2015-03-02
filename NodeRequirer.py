@@ -16,6 +16,7 @@ IS_EXPORT_LINE = re.compile(r"exports\.(.*?)=")
 class RequireCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, command):
+        self.edit = edit
         # Simple Require Command
         if command is 'simple':
             # Must copy the core modules so modifying self.files
@@ -37,7 +38,6 @@ class RequireCommand(sublime_plugin.TextCommand):
 
     def get_project_folder(self):
         project_data = sublime.active_window().project_data()
-
         if project_data:
             first_folder = project_data['folders'][0]['path']
             if os.path.exists(os.path.join(first_folder, 'package.json')):
@@ -107,12 +107,18 @@ class RequireCommand(sublime_plugin.TextCommand):
         if is_core_module(module):
             return self.parse_core_module_exports()
         elif is_local_file(module):
-            return self.parse_exports_in_file(module)
+            dirname = os.path.dirname(self.view.file_name())
+            path = os.path.join(dirname, module)
+            print(path)
+            return self.parse_exports_in_file(path)
         else:
             return self.parse_dependency_module_exports()
 
     def parse_core_module_exports(self):
-        print('I dont know how to do this just yet')
+        sublime.error_message(
+            'Parsing node core module exports is not yet '
+            'implemented. Feel free to submit a PR!'
+        )
 
     def parse_dependency_module_exports(self):
         base_path = './node_modules/' + self.module
@@ -160,6 +166,9 @@ class RequireCommand(sublime_plugin.TextCommand):
             self.insert_exports()
 
     def insert_exports(self):
+        print('About to insert exports')
+        print(self.selected_exports)
+        print(self.module)
         self.view.run_command('export_insert_helper', {
             'args': {
                 'module': self.module,
@@ -191,16 +200,16 @@ class ExportInsertHelperCommand(sublime_plugin.TextCommand):
     def run(self, edit, args):
         """Insert the require statement after the module
         exports have been choosen"""
+        print('At least I got here...')
         module_info = get_module_info(args['module'], self.view)
         self.path = module_info['module_path']
-        self.name = module_info['module_name']
+        self.module_name = module_info['module_name']
         self.exports = args['exports']
         self.edit = edit
 
         content = self.get_content()
-        self.view.run_command('insert_snippet', {
-            'contents': content
-        })
+        position = self.view.sel()[0].begin()
+        self.view.insert(self.edit, position, content)
 
     def get_content(self):
         if len(self.exports) == 1:
@@ -208,8 +217,9 @@ class ExportInsertHelperCommand(sublime_plugin.TextCommand):
         return self.get_many_exports_content()
 
     def get_single_export_content(self):
-        return 'var {export} = require({q}{path}{q}).{export};'.format(
-            export=self.exports[0],
+        require_string = 'var {export} = require({q}{path}{q}).{export};'
+        return require_string.format(
+            export=self.exports.pop(),
             q=get_quotes(),
             path=self.path
         )
@@ -224,7 +234,7 @@ class ExportInsertHelperCommand(sublime_plugin.TextCommand):
         iter_exports = iter(self.exports)
         first_export = next(iter_exports)
         require_string = 'var {{{0}'.format(first_export)
-
+        print('Inside many exports destructured')
         for export in iter_exports:
             require_string += ', {0}'.format(export)
 
@@ -238,7 +248,7 @@ class ExportInsertHelperCommand(sublime_plugin.TextCommand):
     def get_many_exports_standard(self):
         quotes = get_quotes()
         require_string = 'var {module} = require({q}{path}{q});'.format(
-            module=self.name,
+            module=self.module_name,
             q=quotes,
             path=self.path
         )
