@@ -122,7 +122,6 @@ class RequireCommand(sublime_plugin.TextCommand):
     def parse_exports_in_file(self, fpath):
         f = open(fpath, 'r')
         for line in f:
-            print('Looking at Line: {0}'.format(line))
             result = re.search(IS_EXPORT_LINE, line)
             if result:
                 self.exports.append(result.group(1).strip())
@@ -204,6 +203,22 @@ class ExportInsertHelperCommand(sublime_plugin.TextCommand):
         )
 
     def get_many_exports_content(self):
+        destruc = get_pref('destructuring')
+        if destruc is True:
+            return self.get_many_exports_destructured()
+        return self.get_many_exports_standard()
+
+    def get_many_exports_destructured(self):
+        require_string = 'var {{{0}'.format(self.exports[0])
+        for x in range(1, len(self.exports) - 1):
+            require_string+= ', {0}'.format(self.exports[x])
+        require_string+= ' } = require({q}{path}{q})'.format(
+            path=self.path,
+            q=get_quotes()
+        )
+        return require_string
+
+    def get_many_exports_standard(self):
         quotes = get_quotes()
         require_string = 'var {module} = require({q}{path}{q});'.format(
             module=self.name,
