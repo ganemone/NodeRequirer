@@ -13,6 +13,7 @@
         "hogan.js": "Hogan",
         "leaflet": "L",
         "lodash": "_",
+        "string": "S",
         "jquery": "$",
         "jquery-ui": "ui",
         "knockout": "ko",
