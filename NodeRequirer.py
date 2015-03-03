@@ -4,17 +4,19 @@ import os
 import json
 import re
 
-from .src.utils import get_pref
-from .src.RequireSnippet import RequireSnippet
-from .src.modules import core_modules
+from NodeRequirer.src.utils import get_pref, get_quotes
+from NodeRequirer.src.RequireSnippet import RequireSnippet
+from NodeRequirer.src.modules import core_modules
 
 HAS_REL_PATH_RE = re.compile(r"\.?\.?\/")
 WORD_SPLIT_RE = re.compile(r"\W+")
+IS_EXPORT_LINE = re.compile(r"exports\.(.*?)=")
+
 
 class RequireCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, command):
-
+        self.edit = edit
         # Simple Require Command
         if command is 'simple':
             # Must copy the core modules so modifying self.files
@@ -24,16 +26,18 @@ class RequireCommand(sublime_plugin.TextCommand):
         # Export Command
         else:
             self.files = []
+            self.exports = ['------ Select One or More Options ------']
+            self.selected_exports = []
             func = self.parse_exports
 
         self.project_folder = self.get_project_folder()
         self.load_file_list()
 
-        sublime.active_window().show_quick_panel(self.files, func)
+        sublime.active_window().show_quick_panel(
+            self.files, self.on_done_call_func(self.files, func))
 
     def get_project_folder(self):
         project_data = sublime.active_window().project_data()
-
         if project_data:
             first_folder = project_data['folders'][0]['path']
             if os.path.exists(os.path.join(first_folder, 'package.json')):
@@ -73,7 +77,7 @@ class RequireCommand(sublime_plugin.TextCommand):
 
     def parse_package_json(self):
         package = os.path.join(self.project_folder, 'package.json')
-        package_json = json.load(open(package, 'r'))
+        package_json = json.load(open(package, 'r', encoding='UTF-8'))
         dependency_types = (
             'dependencies',
             'devDependencies',
@@ -83,23 +87,100 @@ class RequireCommand(sublime_plugin.TextCommand):
             if dependency_type in package_json:
                 self.files += package_json[dependency_type].keys()
 
-    def insert(self, index):
-        if index >= 0:
-            module = self.files[index]
-            position = self.view.sel()[-1].end()
-            self.view.run_command('require_insert_helper', {
-                'args': {
-                    'position': position,
-                    'module': module
-                }
-            })
+    def on_done_call_func(self, choices, func):
+        def on_done(index):
+            if index >= 0:
+                return func(choices[index])
 
-    def parse_exports(self, index):
-        if index >= 0:
-            module = self.files[index]
-            print("module: {0}".format(module))
+        return on_done
+
+    def insert(self, module):
+        self.view.run_command('require_insert_helper', {
+            'args': {
+                'module': module
+            }
+        })
+
+    def parse_exports(self, module):
+        self.module = module
+        # Module is core module
+        if is_core_module(module):
+            return self.parse_core_module_exports()
+        elif is_local_file(module):
+            dirname = os.path.dirname(self.view.file_name())
+            path = os.path.join(dirname, module)
+            print(path)
+            return self.parse_exports_in_file(path)
+        else:
+            return self.parse_dependency_module_exports()
+
+    def parse_core_module_exports(self):
+        sublime.error_message(
+            'Parsing node core module exports is not yet '
+            'implemented. Feel free to submit a PR!'
+        )
+
+    def parse_dependency_module_exports(self):
+        base_path = './node_modules/' + self.module
+        package = json.load(
+            open(base_path + '/package.json', 'r', encoding='UTF-8'))
+        main = 'index.js' if 'main' not in package else package['main']
+        main_path = os.path.join(base_path, main)
+        return self.parse_exports_in_file(main_path)
+
+    def parse_exports_in_file(self, fpath):
+        f = open(fpath, 'r')
+        for line in f:
+            result = re.search(IS_EXPORT_LINE, line)
+            if result:
+                self.exports.append(result.group(1).strip())
+
+        if len(self.exports) <= 1:
+            return sublime.error_message(
+                'Unable to find specific exports. Note: We currently'
+                ' only support parsing commonjs style exporting'
+            )
+        return self.show_exports()
+
+    def show_exports(self):
+        sublime.set_timeout(
+            lambda: sublime.active_window().show_quick_panel(
+                self.exports, self.on_export_done), 10
+        )
+
+    def on_export_done(self, index):
+        if index > 0:
+            self.exports[0] = '------ Finish Selecting ------'
+            # Add selected export to selected_exports list and
+            # remove it from the list
+            self.selected_exports.append(self.exports.pop(index))
+
+            if len(self.exports) > 1:
+                # Show remaining exports for further selection
+                self.show_exports()
+            elif len(self.selected_exports) > 0:
+                # insert current selected exports
+                self.insert_exports()
+        elif index == 0 and len(self.selected_exports) > 0:
+            # insert current selected exports
+            self.insert_exports()
+
+    def insert_exports(self):
+        print('About to insert exports')
+        print(self.selected_exports)
+        print(self.module)
+        self.view.run_command('export_insert_helper', {
+            'args': {
+                'module': self.module,
+                'exports': self.selected_exports
+            }
+        })
+
 
 class SimpleRequireCommand(RequireCommand):
+
+    """Helper command to call the RequireCommand with the
+    type argument 'simple'"""
 
     def run(self, edit):
         super().run(edit, 'simple')
@@ -107,20 +188,91 @@ class SimpleRequireCommand(RequireCommand):
 
 class ExportRequireCommand(RequireCommand):
 
+    """Helper command to call the RequireCommand with the
+    type argument 'export'"""
+
     def run(self, edit):
         super().run(edit, 'export')
+
+
+class ExportInsertHelperCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit, args):
+        """Insert the require statement after the module
+        exports have been choosen"""
+        print('At least I got here...')
+        module_info = get_module_info(args['module'], self.view)
+        self.path = module_info['module_path']
+        self.module_name = module_info['module_name']
+        self.exports = args['exports']
+        self.edit = edit
+
+        content = self.get_content()
+        position = self.view.sel()[0].begin()
+        self.view.insert(self.edit, position, content)
+
+    def get_content(self):
+        if len(self.exports) == 1:
+            return self.get_single_export_content()
+        return self.get_many_exports_content()
+
+    def get_single_export_content(self):
+        require_string = 'var {export} = require({q}{path}{q}).{export};'
+        return require_string.format(
+            export=self.exports.pop(),
+            q=get_quotes(),
+            path=self.path
+        )
+
+    def get_many_exports_content(self):
+        destruc = get_pref('destructuring')
+        if destruc is True:
+            return self.get_many_exports_destructured()
+        return self.get_many_exports_standard()
+
+    def get_many_exports_destructured(self):
+        iter_exports = iter(self.exports)
+        first_export = next(iter_exports)
+        require_string = 'var {{{0}'.format(first_export)
+        print('Inside many exports destructured')
+        for export in iter_exports:
+            require_string += ', {0}'.format(export)
+
+        require_string += ' }} = require({q}{path}{q});'.format(
+            path=self.path,
+            q=get_quotes()
+        )
+
+        return require_string
+
+    def get_many_exports_standard(self):
+        quotes = get_quotes()
+        require_string = 'var {module} = require({q}{path}{q});'.format(
+            module=self.module_name,
+            q=quotes,
+            path=self.path
+        )
+        for export in self.exports:
+            require_string += '\n'
+            final = 'var {export} = require({q}{path}{q}).{export};'
+            require_string += final.format(
+                export=export,
+                q=quotes,
+                path=self.path
+            )
+
+        return require_string
 
 
 class RequireInsertHelperCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, args):
         """Insert the require statement after the module has been choosen"""
-
-        module_info = self.get_module_info(args['module'])
+        module_info = get_module_info(args['module'], self.view)
         module_path = module_info['module_path']
         module_name = module_info['module_name']
 
-        quotes = "'" if get_pref('quotes') == 'single' else '"'
+        quotes = get_quotes()
 
         view = self.view
 
@@ -153,47 +305,56 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
                 (last_idx, last_bracket) = (idx, pair[0])
         return last_bracket
 
-    def get_module_info(self, module_path):
-        """Gets a dictionary with keys for the module_path and the module_name.
-        In the case that the module is a node core module, the module_path and
-        module_name are the same."""
 
-        aliases = get_pref('alias')
-        omit_extensions = get_pref('omit_extensions')
+def get_module_info(module_path, view):
+    """Gets a dictionary with keys for the module_path and the module_name.
+    In the case that the module is a node core module, the module_path and
+    module_name are the same."""
 
-        if module_path in aliases:
-            module_name = aliases[module_path]
-        else:
-            module_name = os.path.basename(module_path)
-            module_name, extension = os.path.splitext(module_name)
+    aliases = get_pref('alias')
+    omit_extensions = get_pref('omit_extensions')
 
-            # When requiring an index.js file, rename the
-            # var as the directory directly above
-            if module_name == 'index' and extension == ".js":
-                module_path = os.path.dirname(module_path)
-                module_name = os.path.split(module_path)[-1]
-                if module_name == '':
-                    current_file = view.file_module_name()
-                    directory = os.path.dirname(current_file)
-                    module_name = os.path.split(directory)[-1]
-            # Depending on preferences, remove the file extension
-            elif omit_extensions and module_path.endswith(tuple(omit_extensions)):
-                module_path = os.path.splitext(module_path)[0]
+    if module_path in aliases:
+        module_name = aliases[module_path]
+    else:
+        module_name = os.path.basename(module_path)
+        module_name, extension = os.path.splitext(module_name)
 
-            # Capitalize modules named with dashes
-            # i.e. some-thing => SomeThing
+        # When requiring an index.js file, rename the
+        # var as the directory directly above
+        if module_name == 'index' and extension == ".js":
+            module_path = os.path.dirname(module_path)
+            module_name = os.path.split(module_path)[-1]
+            if module_name == '':
+                current_file = view.file_module_name()
+                directory = os.path.dirname(current_file)
+                module_name = os.path.split(directory)[-1]
+        # Depending on preferences, remove the file extension
+        elif omit_extensions and module_path.endswith(tuple(omit_extensions)):
+            module_path = os.path.splitext(module_path)[0]
+
+        # Capitalize modules named with dashes
+        # i.e. some-thing => SomeThing
+        dash_index = module_name.find('-')
+        while dash_index > 0:
+            first = module_name[:dash_index].capitalize()
+            second = module_name[dash_index + 1:].capitalize()
+            module_name = '{fst}{snd}'.format(fst=first, snd=second)
             dash_index = module_name.find('-')
-            while dash_index > 0:
-                first = module_name[:dash_index].capitalize()
-                second = module_name[dash_index + 1:].capitalize()
-                module_name = '{fst}{snd}'.format(fst=first, snd=second)
-                dash_index = module_name.find('-')
 
-        # Fix paths for windows
-        if os.sep != '/':
-            module_path = module_path.replace(os.sep, '/')
+    # Fix paths for windows
+    if os.sep != '/':
+        module_path = module_path.replace(os.sep, '/')
 
-        return {
-            'module_path': module_path,
-            'module_name': module_name
-        }
+    return {
+        'module_path': module_path,
+        'module_name': module_name
+    }
+
+
+def is_core_module(module):
+    return module in core_modules
+
+
+def is_local_file(module):
+    return '/' in module
