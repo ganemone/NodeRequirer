@@ -3,12 +3,14 @@ from .utils import get_pref
 class RequireSnippet():
 
     def __init__(self, name, path, quotes,
-                 should_add_var, should_add_var_statement):
+                 should_add_var, should_add_var_statement,
+                 should_add_semicolon):
         self.name = name
         self.path = path
         self.quotes = quotes
         self.should_add_var = should_add_var
         self.should_add_var_statement = should_add_var_statement
+        self.should_add_semicolon = should_add_semicolon
         self.es6import = get_pref('import')
         self.var_type = get_pref('var')
         if self.var_type not in ('var', 'const', 'let'):
@@ -28,6 +30,9 @@ class RequireSnippet():
             require_fmt = '{name} = ' + require_fmt
             if self.should_add_var_statement:
                 require_fmt = self.var_type + ' ' + require_fmt
+
+        if not self.should_add_semicolon:
+            require_fmt = require_fmt.rstrip(';')
 
         fmt = import_fmt if self.es6import else require_fmt
 

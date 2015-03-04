@@ -352,6 +352,7 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
 
         cursor = view.sel()[0]
         prev_text = view.substr(sublime.Region(0, cursor.begin())).strip()
+        next_text = view.substr(sublime.Region(cursor.end(), cursor.end() + 80)).strip()
         last_bracket = self.get_last_opened_bracket(prev_text)
         in_brackets = last_bracket in ('(', '[')
         last_word = re.split(WORD_SPLIT_RE, prev_text)[-1]
@@ -361,9 +362,12 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
         )
         should_add_var = (not prev_text.endswith((':', '=')) and
                           not in_brackets)
+        should_add_semicolon = (not next_text.startswith((';', ',')) and
+                                not in_brackets)
 
         snippet = RequireSnippet(module_name, module_path, quotes,
-                                 should_add_var, should_add_var_statement)
+                                 should_add_var, should_add_var_statement,
+                                 should_add_semicolon)
         view.run_command('insert_snippet', snippet.get_args())
 
     def get_last_opened_bracket(self, text):
