@@ -1,3 +1,4 @@
+import re
 from .utils import get_pref, get_quotes, get_jscs_options
 
 class RequireSnippet():
@@ -23,6 +24,7 @@ class RequireSnippet():
     def get_formatted_code(self):
         should_use_snippet = self.should_use_snippet()
         should_add_semicolon = self.should_add_semicolon()
+        should_strip_setter_whitespace = self.should_strip_setter_whitespace()
         require_fmt = 'require({quote}{path}{quote});'
         import_fmt = 'import {name} from {quote}{path}{quote}'
 
@@ -38,6 +40,12 @@ class RequireSnippet():
 
         if not should_add_semicolon:
             require_fmt = require_fmt.rstrip(';')
+
+        if should_strip_setter_whitespace['before']:
+            require_fmt = re.sub(' =', '=', require_fmt)
+
+        if should_strip_setter_whitespace['after']:
+            require_fmt = re.sub('= ', '=', require_fmt)
 
         fmt = import_fmt if self.es6import else require_fmt
 
@@ -73,6 +81,26 @@ class RequireSnippet():
             return False
 
         return self.context_allows_semicolon
+
+    def should_strip_setter_whitespace(self):
+        """
+        Parses the disallowSpace{After,Before}BinaryOperators jscs options and checks if spaces
+        are not allowed before or after an `=` so we know if we should strip those from the var statement.
+        """
+
+        def parse_jscs_option(val):
+            if type(val) == bool:
+                return val
+
+            if isinstance(val, list) and '=' in val:
+                return True
+
+            return False
+
+        return dict(
+            before=parse_jscs_option(self.jscs_options.get('disallowSpaceBeforeBinaryOperators')),
+            after=parse_jscs_option(self.jscs_options.get('disallowSpaceAfterBinaryOperators'))
+        )
 
     def should_use_snippet(self):
         return get_pref('snippet')
