@@ -195,9 +195,9 @@ class RequireCommand(sublime_plugin.TextCommand):
         )
 
     def parse_dependency_module_exports(self):
-        base_path = './node_modules/' + self.module
+        base_path = os.path.join(self.project_folder, 'node_modules', self.module)
         package = json.load(
-            open(base_path + '/package.json', 'r', encoding='UTF-8'))
+            open(os.path.join(base_path, 'package.json'), 'r', encoding='UTF-8'))
         main = 'index.js' if 'main' not in package else package['main']
         main_path = os.path.join(base_path, main)
         return self.parse_exports_in_file(main_path)
