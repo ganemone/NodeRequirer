@@ -9,3 +9,11 @@ def get_pref(key):
 
 def get_quotes():
     return "'" if get_pref('quotes') == 'single' else '"'
+
+
+def is_core_module(module):
+    return module in core_modules
+
+
+def is_local_file(module):
+    return '/' in module

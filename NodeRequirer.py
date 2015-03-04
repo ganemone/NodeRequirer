@@ -4,7 +4,7 @@ import os
 import json
 import re
 
-from NodeRequirer.src.utils import get_pref, get_quotes
+from NodeRequirer.src.utils import get_pref, get_quotes, is_core_module, is_local_file
 from NodeRequirer.src.RequireSnippet import RequireSnippet
 from NodeRequirer.src.modules import core_modules
 
@@ -350,11 +350,3 @@ def get_module_info(module_path, view):
         'module_path': module_path,
         'module_name': module_name
     }
-
-
-def is_core_module(module):
-    return module in core_modules
-
-
-def is_local_file(module):
-    return '/' in module
