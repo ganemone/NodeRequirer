@@ -367,7 +367,8 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
 
         snippet = RequireSnippet(module_name, module_path, quotes,
                                  should_add_var, should_add_var_statement,
-                                 should_add_semicolon)
+                                 should_add_semicolon,
+                                 file_name=view.file_name())
         view.run_command('insert_snippet', snippet.get_args())
 
     def get_last_opened_bracket(self, text):
