@@ -105,6 +105,11 @@ class RequireCommand(sublime_plugin.TextCommand):
         self.get_local_files()
 
     def get_local_files(self):
+        # Don't throw errors if invoked in a view without a filename like the console
+        if not self.view.file_name():
+            print('Not in a file, ignoring local files.')
+            return
+
         dirname = os.path.dirname(self.view.file_name())
         exclude = set(['node_modules', '.git',
                        'bower_components', 'components'])
