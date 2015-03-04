@@ -31,17 +31,76 @@ class RequireCommand(sublime_plugin.TextCommand):
             func = self.parse_exports
 
         self.project_folder = self.get_project_folder()
+        # If there is no package.json, show error
+        # TODO add support for bower
+        if not os.path.exists(os.path.join(self.project_folder, 'package.json')):
+            return sublime.error_message(
+                'You must have a package.json file in your projects root directory'
+            )
+
+        if self.project_folder is None:
+            current_dir = os.path.dirname(self.view.file_name())
+            return sublime.active_window().show_input_panel(
+                'Please enter the absolute path to your project folder',
+                current_dir,
+                self.on_path_entered,
+                self.on_path_changed,
+                self.on_canceled
+            )
+
         self.load_file_list()
 
         sublime.active_window().show_quick_panel(
             self.files, self.on_done_call_func(self.files, func))
 
+    def on_path_entered(self, path):
+        sublime.active_window().set_project_data({
+            'folders': [{
+                'path': path
+            }]
+        })
+    # def on_path_entered(self, path):
+    #     basename = os.path.basename(path)
+    #     fullpath = os.path.join(path, basename + '.sublime-project')
+    #     settings = open(fullpath, 'w')
+    #     print('{', file=settings)
+    #     print('  "folders":', file=settings)
+    #     print('  [', file=settings)
+    #     print('    {', file=settings)
+    #     print('    "follow_symlinks": true,', file=settings)
+    #     print('    "path": "{0}"'.format(path), file=settings)
+    #     print('    }', file=settings)
+    #     print('  ]', file=settings)
+    #     print('}', file=settings)
+    #     settings.close()
+
+    #     sublime.set_timeout(
+    #         lambda: self.view.run_command('open_file', {
+    #             'args': {
+    #                 'file': fullpath
+    #             }
+    #         }), 10
+    #     )
+
+
+    def on_path_changed(self, text):
+        print('Text Changed')
+
+    def on_canceled(self):
+        return sublime.error_message(
+            'You must configure the absolute path '
+            'for your project before using NodeRequirer. '
+            'See the readme for more information.'
+        )
+
     def get_project_folder(self):
+        print('Getting Project Folder')
         project_data = sublime.active_window().project_data()
+        print(project_data)
         if project_data:
+            print('Has Project Data')
             first_folder = project_data['folders'][0]['path']
-            if os.path.exists(os.path.join(first_folder, 'package.json')):
-                return first_folder
+            return first_folder
 
         # Walk through directories if we didn't find it easily
         dirname = os.path.dirname(self.view.file_name())
@@ -52,6 +111,7 @@ class RequireCommand(sublime_plugin.TextCommand):
             if parent == dirname:
                 break
             dirname = parent
+
 
     def load_file_list(self):
         self.parse_package_json()
