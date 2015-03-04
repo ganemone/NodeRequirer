@@ -14,7 +14,7 @@ Provides a dropdown of local files, node core modules, and dependencies defined 
 SublimeRequirer will insert `var {modulename} = require('/path/to/modulename.js')`.
 
 Example:
-```
+```javascript
 var Person = require('../../models/person.js');
 var MovieStar = require('../../movie-star.js');
 ```
@@ -26,18 +26,18 @@ attempt to parse the file or dependency to look for commonjs exports, and show a
 exports. The user may then select one or more exports to be required.
 
 Example with single export selection:
-```
+```javascript
 var doSomething = require('../../utils/index.js').doSomething;
 ```
 
 Example with multiple export selection:
-```
+```javascript
 var utils = require('../../utils/index.js');
 var doSomething = utils.doSomething;
 var doAnotherThing = utils.doAnotherThing;
 ```
 Or with the destructuring option in preferences set to true...
-```
+```javascript
 var { doSomething, doAnotherThing } = require('../../utils/index.js');
 ```
 ## Options
@@ -84,7 +84,7 @@ Then edit the file to include a key called "path" with a value being the absolut
 root directory.
 
 Example:
-```
+```javascript
 {
   "folders":
   [
