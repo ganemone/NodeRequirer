@@ -35,8 +35,8 @@ class RequireCommand(sublime_plugin.TextCommand):
         # TODO add support for bower
         if not self.has_package() and not self.has_bower():
             return sublime.error_message(
-                'You must have a package.json file in your '
-                'projects root directory'
+                'You must have a package.json and or bower.json file '
+                'in your projects root directory'
             )
 
         if self.project_folder is None:
