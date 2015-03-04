@@ -43,6 +43,9 @@
     // Use 'single' or "double" quotes
     "quotes": "single",
 
+    // Don't insert semicolons at the end of lines
+    "semicolon_free": false,
+
     // Use 'var', 'const', or 'let' variable declarations
     "var": "var",
 

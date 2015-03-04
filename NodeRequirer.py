@@ -362,12 +362,12 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
         )
         should_add_var = (not prev_text.endswith((':', '=')) and
                           not in_brackets)
-        should_add_semicolon = (not next_text.startswith((';', ',')) and
+        context_allows_semicolon = (not next_text.startswith((';', ',')) and
                                 not in_brackets)
 
         snippet = RequireSnippet(module_name, module_path, quotes,
                                  should_add_var, should_add_var_statement,
-                                 should_add_semicolon,
+                                 context_allows_semicolon,
                                  file_name=view.file_name())
         view.run_command('insert_snippet', snippet.get_args())
 
