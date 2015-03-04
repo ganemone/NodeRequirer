@@ -346,8 +346,6 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
         module_path = module_info['module_path']
         module_name = module_info['module_name']
 
-        quotes = utils.get_quotes()
-
         view = self.view
 
         cursor = view.sel()[0]
@@ -365,7 +363,7 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
         context_allows_semicolon = (not next_text.startswith((';', ',')) and
                                 not in_brackets)
 
-        snippet = RequireSnippet(module_name, module_path, quotes,
+        snippet = RequireSnippet(module_name, module_path,
                                  should_add_var, should_add_var_statement,
                                  context_allows_semicolon,
                                  file_name=view.file_name())

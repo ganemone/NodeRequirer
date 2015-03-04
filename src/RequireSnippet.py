@@ -1,14 +1,13 @@
-from .utils import get_pref, get_jscs_options
+from .utils import get_pref, get_quotes, get_jscs_options
 
 class RequireSnippet():
 
-    def __init__(self, name, path, quotes,
+    def __init__(self, name, path,
                  should_add_var, should_add_var_statement,
                  context_allows_semicolon,
                  file_name=None):
         self.name = name
         self.path = path
-        self.quotes = quotes
         self.should_add_var = should_add_var
         self.should_add_var_statement = should_add_var_statement
         self.context_allows_semicolon = context_allows_semicolon
@@ -45,13 +44,25 @@ class RequireSnippet():
         return fmt.format(
             name=self.name,
             path=self.path,
-            quote=self.quotes
+            quote=self.get_quotes()
         )
 
     def get_args(self):
         return {
             'contents': self.get_formatted_code()
         }
+
+    def get_quotes(self):
+        # Allow explicit validateQuoteMarks rules to override the quote preferences
+        # However ignore the 'true' autodetection setting.
+        jscs_quotes = self.jscs_options.get('validateQuoteMarks')
+        if isinstance(jscs_quotes, dict):
+            jscs_quotes = jscs_quotes.get('mark')
+        if jscs_quotes and jscs_quotes != True:
+            return jscs_quotes
+
+        # Use whatever quote type is set in preferences
+        return get_quotes()
 
     def should_add_semicolon(self):
         # Ignore semicolons when jscs options say to
