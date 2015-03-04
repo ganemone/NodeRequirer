@@ -1,4 +1,5 @@
 import sublime
+from .modules import core_modules
 
 SETTINGS_FILE = "NodeRequirer.sublime-settings"
 
