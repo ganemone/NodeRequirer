@@ -12,6 +12,7 @@ core_modules = [
     'http',
     'https',
     'net',
+    'npm',
     'os',
     'path',
     'punycode',
