@@ -105,6 +105,11 @@ class RequireCommand(sublime_plugin.TextCommand):
         self.get_local_files()
 
     def get_local_files(self):
+        # Don't throw errors if invoked in a view without a filename like the console
+        if not self.view.file_name():
+            print('Not in a file, ignoring local files.')
+            return
+
         dirname = os.path.dirname(self.view.file_name())
         exclude = set(['node_modules', '.git',
                        'bower_components', 'components'])
@@ -190,9 +195,9 @@ class RequireCommand(sublime_plugin.TextCommand):
         )
 
     def parse_dependency_module_exports(self):
-        base_path = './node_modules/' + self.module
+        base_path = os.path.join(self.project_folder, 'node_modules', self.module)
         package = json.load(
-            open(base_path + '/package.json', 'r', encoding='UTF-8'))
+            open(os.path.join(base_path, 'package.json'), 'r', encoding='UTF-8'))
         main = 'index.js' if 'main' not in package else package['main']
         main_path = os.path.join(base_path, main)
         return self.parse_exports_in_file(main_path)
@@ -341,12 +346,11 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
         module_path = module_info['module_path']
         module_name = module_info['module_name']
 
-        quotes = utils.get_quotes()
-
         view = self.view
 
         cursor = view.sel()[0]
         prev_text = view.substr(sublime.Region(0, cursor.begin())).strip()
+        next_text = view.substr(sublime.Region(cursor.end(), cursor.end() + 80)).strip()
         last_bracket = self.get_last_opened_bracket(prev_text)
         in_brackets = last_bracket in ('(', '[')
         last_word = re.split(WORD_SPLIT_RE, prev_text)[-1]
@@ -356,9 +360,14 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
         )
         should_add_var = (not prev_text.endswith((':', '=')) and
                           not in_brackets)
+        context_allows_semicolon = (not next_text.startswith((';', ',')) and
+                                not in_brackets)
 
-        snippet = RequireSnippet(module_name, module_path, quotes,
-                                 should_add_var, should_add_var_statement)
+        snippet = RequireSnippet(module_name, module_path,
+                                 should_add_var=should_add_var,
+                                 should_add_var_statement=should_add_var_statement,
+                                 context_allows_semicolon=context_allows_semicolon,
+                                 file_name=view.file_name())
         view.run_command('insert_snippet', snippet.get_args())
 
     def get_last_opened_bracket(self, text):

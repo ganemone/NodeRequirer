@@ -1,46 +1,105 @@
-from .utils import get_pref
+import re
+from .utils import get_pref, get_quotes, get_jscs_options, strip_snippet_groups
 
 class RequireSnippet():
 
-    def __init__(self, name, path, quotes,
-                 should_add_var, should_add_var_statement):
+    def __init__(self, name, path,
+                 should_add_var, should_add_var_statement,
+                 context_allows_semicolon,
+                 file_name=None):
         self.name = name
         self.path = path
-        self.quotes = quotes
         self.should_add_var = should_add_var
         self.should_add_var_statement = should_add_var_statement
+        self.context_allows_semicolon = context_allows_semicolon
         self.es6import = get_pref('import')
         self.var_type = get_pref('var')
         if self.var_type not in ('var', 'const', 'let'):
             self.var_type = 'var'
+        self.file_name = file_name
+        self.jscs_options = dict()
+        if self.file_name:
+            self.jscs_options = get_jscs_options(self.file_name)
 
     def get_formatted_code(self):
         should_use_snippet = self.should_use_snippet()
+        should_add_semicolon = self.should_add_semicolon()
+        should_strip_setter_whitespace = self.should_strip_setter_whitespace()
         require_fmt = 'require({quote}{path}{quote});'
-        import_fmt = 'import {name} from {quote}{path}{quote}'
+        import_fmt = 'import ${{1:{name}}} ${{2:as ${{3:somename}}}}'
+        import_fmt += ' from {quote}{path}{quote};'
 
-        if should_use_snippet:
-            import_fmt = 'import ${{1:{name}}} ${{2:as ${{3:somename}}}}'
-            import_fmt += ' from {quote}{path}{quote};'
-            if self.should_add_var:
-                require_fmt = '${{1:{name}}} = ' + require_fmt
-        elif self.should_add_var:
-            require_fmt = '{name} = ' + require_fmt
+        if self.should_add_var:
+            require_fmt = '${{1:{name}}} = ' + require_fmt
             if self.should_add_var_statement:
                 require_fmt = self.var_type + ' ' + require_fmt
 
+        if not should_add_semicolon:
+            require_fmt = require_fmt.rstrip(';')
+
+        if should_strip_setter_whitespace['before']:
+            require_fmt = re.sub(' =', '=', require_fmt)
+
+        if should_strip_setter_whitespace['after']:
+            require_fmt = re.sub('= ', '=', require_fmt)
+
         fmt = import_fmt if self.es6import else require_fmt
+
+        if not should_use_snippet:
+            fmt = strip_snippet_groups(fmt)
 
         return fmt.format(
             name=self.name,
             path=self.path,
-            quote=self.quotes
+            quote=self.get_quotes()
         )
 
     def get_args(self):
         return {
             'contents': self.get_formatted_code()
         }
+
+    def get_quotes(self):
+        # Allow explicit validateQuoteMarks rules to override the quote preferences
+        # However ignore the 'true' autodetection setting.
+        jscs_quotes = self.jscs_options.get('validateQuoteMarks')
+        if isinstance(jscs_quotes, dict):
+            jscs_quotes = jscs_quotes.get('mark')
+        if jscs_quotes and jscs_quotes != True:
+            return jscs_quotes
+
+        # Use whatever quote type is set in preferences
+        return get_quotes()
+
+    def should_add_semicolon(self):
+        # Ignore semicolons when jscs options say to
+        if self.jscs_options.get('disallowSemicolons', False):
+            return False
+
+        if get_pref('semicolon_free'):
+            return False
+
+        return self.context_allows_semicolon
+
+    def should_strip_setter_whitespace(self):
+        """
+        Parses the disallowSpace{After,Before}BinaryOperators jscs options and checks if spaces
+        are not allowed before or after an `=` so we know if we should strip those from the var statement.
+        """
+
+        def parse_jscs_option(val):
+            if type(val) == bool:
+                return val
+
+            if isinstance(val, list) and '=' in val:
+                return True
+
+            return False
+
+        return dict(
+            before=parse_jscs_option(self.jscs_options.get('disallowSpaceBeforeBinaryOperators')),
+            after=parse_jscs_option(self.jscs_options.get('disallowSpaceAfterBinaryOperators'))
+        )
 
     def should_use_snippet(self):
         return get_pref('snippet')
