@@ -364,8 +364,9 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
                                 not in_brackets)
 
         snippet = RequireSnippet(module_name, module_path,
-                                 should_add_var, should_add_var_statement,
-                                 context_allows_semicolon,
+                                 should_add_var=should_add_var,
+                                 should_add_var_statement=should_add_var_statement,
+                                 context_allows_semicolon=context_allows_semicolon,
                                  file_name=view.file_name())
         view.run_command('insert_snippet', snippet.get_args())
 
