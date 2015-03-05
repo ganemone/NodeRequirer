@@ -3,6 +3,7 @@ import os
 import io
 import json
 import re
+from io import StringIO
 
 from .modules import core_modules
 
@@ -23,6 +24,54 @@ def is_core_module(module):
 
 def is_local_file(module):
     return '/' in module
+
+
+def strip_snippet_groups(snippet_text):
+    """
+    This (admittedly complex looking) function goes through a snippet string and strips
+    out the groups (`${{1}}` and `${{2:content}}`) leaving any default text in their place.
+
+    It's somewhat complex since it iterates through matches on `${{n}}`, `${{n:`, and `}}`
+    and uses a stack to ensure that nested groups (`${{1:...${{2:...}}...}}`) work correctly
+    and `}}`'s that do not belong to a group are not discarded.
+    """
+    r = re.compile('\$\{\{(\d+)(:|\}\})|(\}\})')
+    pos = 0
+    stack = []
+    out = StringIO()
+    while True:
+        m = r.search(snippet_text, pos)
+        if m:
+            out.write(snippet_text[pos:m.start()])
+            start_num, mid, end = m.group(1, 2, 3)
+            if end:
+                if len(stack) > 0:
+                    _out, _ = stack.pop()
+                    _out.write(out.getvalue())
+                    out.close()
+                    out = _out
+                else:
+                    out.write(end)
+            elif mid == '}}':
+                pass
+            else:
+                stack.append((out, m.group()))
+                out = StringIO()
+            pos = m.end()
+        else:
+            out.write(snippet_text[pos:])
+            break
+    while len(stack) > 0:
+        _out, tail = stack.pop()
+        _out.write(out.getvalue())
+        _out.write(tail)
+        out.close()
+        out = _out
+
+    snippet_text = out.getvalue()
+    out.close()
+
+    return snippet_text
 
 
 def lazy_parse_comment_json(json_text):

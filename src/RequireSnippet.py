@@ -1,5 +1,5 @@
 import re
-from .utils import get_pref, get_quotes, get_jscs_options
+from .utils import get_pref, get_quotes, get_jscs_options, strip_snippet_groups
 
 class RequireSnippet():
 
@@ -26,15 +26,11 @@ class RequireSnippet():
         should_add_semicolon = self.should_add_semicolon()
         should_strip_setter_whitespace = self.should_strip_setter_whitespace()
         require_fmt = 'require({quote}{path}{quote});'
-        import_fmt = 'import {name} from {quote}{path}{quote}'
+        import_fmt = 'import ${{1:{name}}} ${{2:as ${{3:somename}}}}'
+        import_fmt += ' from {quote}{path}{quote};'
 
-        if should_use_snippet:
-            import_fmt = 'import ${{1:{name}}} ${{2:as ${{3:somename}}}}'
-            import_fmt += ' from {quote}{path}{quote};'
-            if self.should_add_var:
-                require_fmt = '${{1:{name}}} = ' + require_fmt
-        elif self.should_add_var:
-            require_fmt = '{name} = ' + require_fmt
+        if self.should_add_var:
+            require_fmt = '${{1:{name}}} = ' + require_fmt
             if self.should_add_var_statement:
                 require_fmt = self.var_type + ' ' + require_fmt
 
@@ -48,6 +44,9 @@ class RequireSnippet():
             require_fmt = re.sub('= ', '=', require_fmt)
 
         fmt = import_fmt if self.es6import else require_fmt
+
+        if not should_use_snippet:
+            fmt = strip_snippet_groups(fmt)
 
         return fmt.format(
             name=self.name,
