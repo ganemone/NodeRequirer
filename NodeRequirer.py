@@ -105,7 +105,8 @@ class RequireCommand(sublime_plugin.TextCommand):
         self.get_local_files()
 
     def get_local_files(self):
-        # Don't throw errors if invoked in a view without a filename like the console
+        # Don't throw errors if invoked in a view without
+        # a filename like the console
         if not self.view.file_name():
             print('Not in a file, ignoring local files.')
             return
@@ -195,9 +196,11 @@ class RequireCommand(sublime_plugin.TextCommand):
         )
 
     def parse_dependency_module_exports(self):
-        base_path = os.path.join(self.project_folder, 'node_modules', self.module)
-        package = json.load(
-            open(os.path.join(base_path, 'package.json'), 'r', encoding='UTF-8'))
+        base_path = os.path.join(
+            self.project_folder, 'node_modules', self.module
+        )
+        pkg_path = os.path.join(base_path, 'package.json')
+        package = json.load(open(pkg_path, 'r', encoding='UTF-8'))
         main = 'index.js' if 'main' not in package else package['main']
         main_path = os.path.join(base_path, main)
         return self.parse_exports_in_file(main_path)
@@ -240,9 +243,6 @@ class RequireCommand(sublime_plugin.TextCommand):
             self.insert_exports()
 
     def insert_exports(self):
-        print('About to insert exports')
-        print(self.selected_exports)
-        print(self.module)
         self.view.run_command('export_insert_helper', {
             'args': {
                 'module': self.module,
@@ -274,7 +274,6 @@ class ExportInsertHelperCommand(sublime_plugin.TextCommand):
     def run(self, edit, args):
         """Insert the require statement after the module
         exports have been choosen"""
-        print('At least I got here...')
         module_info = get_module_info(args['module'], self.view)
         self.path = module_info['module_path']
         self.module_name = module_info['module_name']
@@ -350,7 +349,8 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
 
         cursor = view.sel()[0]
         prev_text = view.substr(sublime.Region(0, cursor.begin())).strip()
-        next_text = view.substr(sublime.Region(cursor.end(), cursor.end() + 80)).strip()
+        next_text = view.substr(
+            sublime.Region(cursor.end(), cursor.end() + 80)).strip()
         last_bracket = self.get_last_opened_bracket(prev_text)
         in_brackets = last_bracket in ('(', '[')
         last_word = re.split(WORD_SPLIT_RE, prev_text)[-1]
@@ -361,13 +361,16 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
         should_add_var = (not prev_text.endswith((':', '=')) and
                           not in_brackets)
         context_allows_semicolon = (not next_text.startswith((';', ',')) and
-                                not in_brackets)
+                                    not in_brackets)
 
-        snippet = RequireSnippet(module_name, module_path,
-                                 should_add_var=should_add_var,
-                                 should_add_var_statement=should_add_var_statement,
-                                 context_allows_semicolon=context_allows_semicolon,
-                                 file_name=view.file_name())
+        snippet = RequireSnippet(
+            module_name,
+            module_path,
+            should_add_var=should_add_var,
+            should_add_var_statement=should_add_var_statement,
+            context_allows_semicolon=context_allows_semicolon,
+            file_name=view.file_name()
+        )
         view.run_command('insert_snippet', snippet.get_args())
 
     def get_last_opened_bracket(self, text):
