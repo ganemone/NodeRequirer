@@ -61,6 +61,43 @@
     // E.g. require('./filename') for ./filename.js if js is omited
     "omit_extensions": ["js"],
 
+    // Use Bluebird style promisification of libraries
+    // This setting is best set per-project
+    "usePromisify": false,
+
+    // Settings that allow you to override what promisify wrapper is used
+    "promise": {
+        "promisify": "Promise.promisify",
+        "promisifyAll": "Promise.promisifyAll"
+
+    },
+
+    // A list of packages that should be promisified with Promise.promisify
+    "promisify": [
+        "which",
+        "rimraf"
+    ],
+
+    // A list of packages that should be promisified with Promise.promisifyAll
+    "promisifyAll": [
+        "fs",
+        "graceful-fs",
+        "dns",
+        "zlib",
+        "redis",
+        "mongodb",
+        "mongoose",
+        "mkdirp",
+        "winston",
+        "xml2js",
+        "jsdom",
+        "fs-extra",
+        "prompt",
+        "nodemailer",
+        "ncp",
+        "pg"
+    ],
+
     // Use ES6 Import Style
     // i.e. import module from module
     "import": false,
