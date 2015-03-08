@@ -392,11 +392,11 @@ def get_module_info(module_path, view):
     In the case that the module is a node core module, the module_path and
     module_name are the same."""
 
-    aliases = utils.get_pref('alias')
+    aliased_to = utils.aliased(module_path)
     omit_extensions = utils.get_pref('omit_extensions')
 
-    if module_path in aliases:
-        module_name = aliases[module_path]
+    if aliased_to:
+        module_name = aliased_to
     else:
         module_name = os.path.basename(module_path)
         module_name, extension = os.path.splitext(module_name)

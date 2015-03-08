@@ -26,6 +26,20 @@ def is_local_file(module):
     return '/' in module
 
 
+def aliased(module_path):
+    aliases = get_pref('alias')
+    alias_patterns = get_pref('alias-pattern')
+
+    if module_path in aliases:
+        return aliases[module_path]
+
+    for alias_pattern, result_pattern in alias_patterns.items():
+        m = re.match(alias_pattern, module_path)
+        if m:
+            return m.expand(result_pattern)
+
+    return None
+
 def strip_snippet_groups(snippet_text):
     """
     This (admittedly complex looking) function goes through a snippet string and strips

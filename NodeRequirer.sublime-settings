@@ -37,7 +37,13 @@
         "qunit": "QUnit",
         "zepto": "$",
         "graceful-fs": "fs",
-        "findup-sync": "findup"
+        "findup-sync": "findup",
+        "gulp-util": "gutil"
+    },
+
+    // Common "alias" patterns that can be expressed using regular expressions
+    "alias-pattern": {
+        "gulp-(.+)": "\\1"
     },
 
     // Use 'single' or "double" quotes
