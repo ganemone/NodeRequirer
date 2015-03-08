@@ -38,7 +38,8 @@
         "zepto": "$",
         "graceful-fs": "fs",
         "findup-sync": "findup",
-        "gulp-util": "gutil"
+        "gulp-util": "gutil",
+        "package.json": "pkg"
     },
 
     // Common "alias" patterns that can be expressed using regular expressions
