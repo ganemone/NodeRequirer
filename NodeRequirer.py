@@ -369,6 +369,7 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
             should_add_var=should_add_var,
             should_add_var_statement=should_add_var_statement,
             context_allows_semicolon=context_allows_semicolon,
+            view=view,
             file_name=view.file_name()
         )
         view.run_command('insert_snippet', snippet.get_args())
@@ -392,8 +393,8 @@ def get_module_info(module_path, view):
     In the case that the module is a node core module, the module_path and
     module_name are the same."""
 
-    aliased_to = utils.aliased(module_path)
-    omit_extensions = utils.get_pref('omit_extensions')
+    aliased_to = utils.aliased(module_path, view=view)
+    omit_extensions = utils.get_project_pref('omit_extensions', view=view)
 
     if aliased_to:
         module_name = aliased_to

@@ -1,21 +1,23 @@
 import re
-from .utils import get_pref, get_quotes, get_jscs_options, strip_snippet_groups
+from .utils import get_pref, get_project_pref, get_quotes, get_jscs_options, strip_snippet_groups
 
 class RequireSnippet():
 
     def __init__(self, name, path,
                  should_add_var, should_add_var_statement,
                  context_allows_semicolon,
+                 view=None,
                  file_name=None):
         self.name = name
         self.path = path
         self.should_add_var = should_add_var
         self.should_add_var_statement = should_add_var_statement
         self.context_allows_semicolon = context_allows_semicolon
-        self.es6import = get_pref('import')
-        self.var_type = get_pref('var')
+        self.es6import = get_project_pref('import', view=view)
+        self.var_type = get_project_pref('var', view=view)
         if self.var_type not in ('var', 'const', 'let'):
             self.var_type = 'var'
+        self.view = view
         self.file_name = file_name
         self.jscs_options = dict()
         if self.file_name:
