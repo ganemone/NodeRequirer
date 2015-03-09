@@ -9,9 +9,49 @@ from .modules import core_modules
 
 SETTINGS_FILE = "NodeRequirer.sublime-settings"
 
+MERGE_BLACKLIST = ('omit_extensions',)
+
+def merge_pref(key, old_val, new_val):
+    if new_val is None:
+        return old_val
+
+    if key in MERGE_BLACKLIST:
+        return new_val
+
+    if isinstance(old_val, dict):
+        val = dict()
+        val.update(old_val)
+        val.update(new_val)
+        return val
+    elif isinstance(old_val, list):
+        val = list()
+        val.extend(old_val)
+        val.extend(new_val)
+        return val
+    else:
+        return new_val
+
 
 def get_pref(key):
     return sublime.load_settings(SETTINGS_FILE).get(key)
+
+
+def get_project_pref(key, view=None):
+    # Use the user preference
+    val = get_pref(key)
+
+    if view and view.file_name():
+        # Allow project .noderequirerrc files to override preferences
+        rcfile = findup(view.file_name(), '.noderequirer.json')
+        if rcfile:
+            val = merge_pref(key, val, json.load(open(rcfile, 'r', encoding='UTF-8')).get(key))
+
+        # Allow per-project preferences from the project file to override preferences and project rc settings
+        project_settings = view.window().project_data().get('NodeRequirer')
+        if project_settings:
+            val = merge_pref(key, val, project_settings.get(key))
+
+    return val
 
 
 def get_quotes():
@@ -26,9 +66,9 @@ def is_local_file(module):
     return '/' in module
 
 
-def aliased(module_path):
-    aliases = get_pref('alias')
-    alias_patterns = get_pref('alias-pattern')
+def aliased(module_path, view=None):
+    aliases = get_project_pref('alias', view=view)
+    alias_patterns = get_project_pref('alias-pattern', view=view)
 
     # Resolve explicit aliases
     if module_path in aliases:

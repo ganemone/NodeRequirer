@@ -1,19 +1,21 @@
 import re
-from .utils import get_pref, get_quotes, get_jscs_options, strip_snippet_groups
+from .utils import get_pref, get_project_pref, get_quotes, get_jscs_options, strip_snippet_groups
 
 class RequireSnippet():
 
     def __init__(self, name, path,
                  should_add_var, should_add_var_statement,
                  context_allows_semicolon,
+                 view=None,
                  file_name=None):
+        self.view = view
         self.name = name
         self.path = path
         self.should_add_var = should_add_var
         self.should_add_var_statement = should_add_var_statement
         self.context_allows_semicolon = context_allows_semicolon
-        self.es6import = get_pref('import')
-        self.var_type = get_pref('var')
+        self.es6import = self.get_project_pref('import')
+        self.var_type = self.get_project_pref('var')
         if self.var_type not in ('var', 'const', 'let'):
             self.var_type = 'var'
         self.file_name = file_name
@@ -25,17 +27,21 @@ class RequireSnippet():
         should_use_snippet = self.should_use_snippet()
         should_add_semicolon = self.should_add_semicolon()
         should_strip_setter_whitespace = self.should_strip_setter_whitespace()
-        require_fmt = 'require({quote}{path}{quote});'
+        promisify = self.promisify()
+        require_fmt = 'require({quote}{path}{quote})'
         import_fmt = 'import ${{1:{name}}} ${{2:as ${{3:somename}}}}'
-        import_fmt += ' from {quote}{path}{quote};'
+        import_fmt += ' from {quote}{path}{quote}'
+
+        if promisify:
+            require_fmt = '%s(%s)' % (promisify, require_fmt)
 
         if self.should_add_var:
             require_fmt = '${{1:{name}}} = ' + require_fmt
             if self.should_add_var_statement:
                 require_fmt = self.var_type + ' ' + require_fmt
 
-        if not should_add_semicolon:
-            require_fmt = require_fmt.rstrip(';')
+        if should_add_semicolon:
+            require_fmt += ';'
 
         if should_strip_setter_whitespace['before']:
             require_fmt = re.sub(' =', '=', require_fmt)
@@ -71,6 +77,18 @@ class RequireSnippet():
         # Use whatever quote type is set in preferences
         return get_quotes()
 
+    def promisify(self):
+        if not self.get_project_pref('usePromisify'):
+            return
+
+        if self.path in self.get_project_pref('promisify'):
+            return self.get_project_pref('promise').get('promisify')
+
+        if self.path in self.get_project_pref('promisifyAll'):
+            return self.get_project_pref('promise').get('promisifyAll')
+
+        return None
+
     def should_add_semicolon(self):
         # Ignore semicolons when jscs options say to
         if self.jscs_options.get('disallowSemicolons', False):
@@ -103,3 +121,6 @@ class RequireSnippet():
 
     def should_use_snippet(self):
         return get_pref('snippet')
+
+    def get_project_pref(self, key):
+        return get_project_pref(key, view=self.view)
