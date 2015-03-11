@@ -8,19 +8,38 @@ to require any local module or dependency listed in your package.json. In additi
 you to include node core modules.
 
 ## Usage
-Simply type 'ctrl+shift+i' and search for the module you are looking to require.
+`ctrl+shift+i` => `RequireCommand`
+
+Provides a dropdown of local files, node core modules, and dependencies defined in package.json + bower.json
 SublimeRequirer will insert `var {modulename} = require('/path/to/modulename.js')`.
 
-NOTE: I build sublime requirer to help me be more productive. Currently, it is configured to work well
-with the naming convention that I use. For example, modules inside a /models folder will have their names
-capitalized automatically. Additionally, any module with a name separated by dashes will remove the dash, and capitalize the individual words.
-
 Example:
-```
+```javascript
 var Person = require('../../models/person.js');
 var MovieStar = require('../../movie-star.js');
 ```
 
+`ctrl+shift+e` => `RequireSpecificExportCommand`
+
+Provides same initial drop down as `RequireCommand`. After selecting a module, the plugin will
+attempt to parse the file or dependency to look for commonjs exports, and show a list of possible 
+exports. The user may then select one or more exports to be required.
+
+Example with single export selection:
+```javascript
+var doSomething = require('../../utils/index.js').doSomething;
+```
+
+Example with multiple export selection:
+```javascript
+var utils = require('../../utils/index.js');
+var doSomething = utils.doSomething;
+var doAnotherThing = utils.doAnotherThing;
+```
+Or with the destructuring option in preferences set to true...
+```javascript
+var { doSomething, doAnotherThing } = require('../../utils/index.js');
+```
 ## Options
 
 `NodeRequirer` exposes several useful plugin options for configuring aliases, import modes and quotes. These are available under `Preferences -> Package Settings -> Node Require` or search for `NodeRequirer: Set plugin options`
@@ -29,15 +48,23 @@ Example `User Plugin Preferences`
 
 ```javascript
 {
-    // Use double quotes
-    "quotes": "double",
-    // Default to ES6 import format, when syntactically correct
-    "import": true,
-
+    // Type of quotes to use
+    "quotes": "single || double",
+    
+    // Use ES6 import format, when syntactically correct
+    "import": false,
+    
     "alias": {
         // <module name>: <variable name>
         "underscore": "_"
     }
+    
+    // Use object destructuring when assigning multiple exports 
+    'destructuring': false,
+    
+    // Use snippets when inserting require statements to allow
+    // for easy variable name changing
+    'snippet': true
 }
 ```
 
@@ -51,11 +78,13 @@ Example `User Plugin Preferences`
 IMPORTANT: In order for node-requirer to parse your project correctly, you must have a
 .sublime-project file configured with the absolute path to your project. To create this file,
 select Project => Save Project As => and name your .sublime-project file what ever you want.
+Trying to require a file before this file has been created will prompt the user for a path, 
+using the directory of the current file as default, and automatically create the file for you.
 Then edit the file to include a key called "path" with a value being the absolute path to your projects
 root directory.
 
 Example:
-```
+```javascript
 {
   "folders":
   [
@@ -84,9 +113,3 @@ These are for Sublime Text 3:
 
 #### Windows
 `git clone https://github.com/ganemone/NodeRequirer.git "%APPDATA%/Sublime Text 3/Packages/NodeRequirer"`
-
-
-
-I will be making this more configurable in the future.
-
-Thank you!

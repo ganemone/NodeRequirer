@@ -4,7 +4,7 @@ import os
 import json
 import re
 
-from NodeRequirer.src.utils import get_pref, get_quotes, is_core_module, is_local_file
+from NodeRequirer.src import utils
 from NodeRequirer.src.RequireSnippet import RequireSnippet
 from NodeRequirer.src.modules import core_modules
 
@@ -33,9 +33,10 @@ class RequireCommand(sublime_plugin.TextCommand):
         self.project_folder = self.get_project_folder()
         # If there is no package.json, show error
         # TODO add support for bower
-        if not os.path.exists(os.path.join(self.project_folder, 'package.json')):
+        if not self.has_package() and not self.has_bower():
             return sublime.error_message(
-                'You must have a package.json file in your projects root directory'
+                'You must have a package.json and or bower.json file '
+                'in your projects root directory'
             )
 
         if self.project_folder is None:
@@ -53,38 +54,25 @@ class RequireCommand(sublime_plugin.TextCommand):
         sublime.active_window().show_quick_panel(
             self.files, self.on_done_call_func(self.files, func))
 
+    def has_package(self):
+        return os.path.exists(
+            os.path.join(self.project_folder, 'package.json')
+        )
+
+    def has_bower(self):
+        return os.path.exists(
+            os.path.join(self.project_folder, 'bower.json')
+        )
+
     def on_path_entered(self, path):
         sublime.active_window().set_project_data({
             'folders': [{
                 'path': path
             }]
         })
-    # def on_path_entered(self, path):
-    #     basename = os.path.basename(path)
-    #     fullpath = os.path.join(path, basename + '.sublime-project')
-    #     settings = open(fullpath, 'w')
-    #     print('{', file=settings)
-    #     print('  "folders":', file=settings)
-    #     print('  [', file=settings)
-    #     print('    {', file=settings)
-    #     print('    "follow_symlinks": true,', file=settings)
-    #     print('    "path": "{0}"'.format(path), file=settings)
-    #     print('    }', file=settings)
-    #     print('  ]', file=settings)
-    #     print('}', file=settings)
-    #     settings.close()
-
-    #     sublime.set_timeout(
-    #         lambda: self.view.run_command('open_file', {
-    #             'args': {
-    #                 'file': fullpath
-    #             }
-    #         }), 10
-    #     )
-
 
     def on_path_changed(self, text):
-        print('Text Changed')
+        return None
 
     def on_canceled(self):
         return sublime.error_message(
@@ -112,16 +100,25 @@ class RequireCommand(sublime_plugin.TextCommand):
                 break
             dirname = parent
 
-
     def load_file_list(self):
-        self.parse_package_json()
+        self.get_dependencies()
+        self.get_local_files()
+
+    def get_local_files(self):
+        # Don't throw errors if invoked in a view without
+        # a filename like the console
+        if not self.view.file_name():
+            print('Not in a file, ignoring local files.')
+            return
+
         dirname = os.path.dirname(self.view.file_name())
-        walk = os.walk(self.project_folder)
-        for root, dirs, files in walk:
-            if 'node_modules' in dirs:
-                dirs.remove('node_modules')
-            if '.git' in dirs:
-                dirs.remove('.git')
+        exclude = set(['node_modules', '.git',
+                       'bower_components', 'components'])
+        for root, dirs, files in os.walk(self.project_folder, topdown=True):
+            if os.path.samefile(root, self.project_folder):
+                dirs[:] = [d for d in dirs if d not in exclude]
+                print('Removing Dirs')
+
             for file_name in files:
                 if file_name[0] is not '.':
                     file_name = "%s/%s" % (root, file_name)
@@ -135,7 +132,22 @@ class RequireCommand(sublime_plugin.TextCommand):
 
                 self.files.append(file_name)
 
-    def parse_package_json(self):
+    def get_dependencies(self):
+        if self.has_bower():
+            self.parse_bower()
+        if self.has_package():
+            self.parse_package()
+
+    def parse_bower(self):
+        bower_path = os.path.join(self.project_folder, 'bower.json')
+        bower = json.load(open(bower_path, 'r', encoding='UTF-8'))
+        dependency_types = (
+            'dependencies',
+            'devDependencies'
+        )
+        self.add_dependencies(dependency_types, bower)
+
+    def parse_package(self):
         package = os.path.join(self.project_folder, 'package.json')
         package_json = json.load(open(package, 'r', encoding='UTF-8'))
         dependency_types = (
@@ -143,9 +155,12 @@ class RequireCommand(sublime_plugin.TextCommand):
             'devDependencies',
             'optionalDependencies'
         )
+        self.add_dependencies(dependency_types, package_json)
+
+    def add_dependencies(self, dependency_types, json):
         for dependency_type in dependency_types:
-            if dependency_type in package_json:
-                self.files += package_json[dependency_type].keys()
+            if dependency_type in json:
+                self.files += json[dependency_type].keys()
 
     def on_done_call_func(self, choices, func):
         def on_done(index):
@@ -164,9 +179,9 @@ class RequireCommand(sublime_plugin.TextCommand):
     def parse_exports(self, module):
         self.module = module
         # Module is core module
-        if is_core_module(module):
+        if utils.is_core_module(module):
             return self.parse_core_module_exports()
-        elif is_local_file(module):
+        elif utils.is_local_file(module):
             dirname = os.path.dirname(self.view.file_name())
             path = os.path.join(dirname, module)
             print(path)
@@ -181,9 +196,11 @@ class RequireCommand(sublime_plugin.TextCommand):
         )
 
     def parse_dependency_module_exports(self):
-        base_path = './node_modules/' + self.module
-        package = json.load(
-            open(base_path + '/package.json', 'r', encoding='UTF-8'))
+        base_path = os.path.join(
+            self.project_folder, 'node_modules', self.module
+        )
+        pkg_path = os.path.join(base_path, 'package.json')
+        package = json.load(open(pkg_path, 'r', encoding='UTF-8'))
         main = 'index.js' if 'main' not in package else package['main']
         main_path = os.path.join(base_path, main)
         return self.parse_exports_in_file(main_path)
@@ -226,9 +243,6 @@ class RequireCommand(sublime_plugin.TextCommand):
             self.insert_exports()
 
     def insert_exports(self):
-        print('About to insert exports')
-        print(self.selected_exports)
-        print(self.module)
         self.view.run_command('export_insert_helper', {
             'args': {
                 'module': self.module,
@@ -260,7 +274,6 @@ class ExportInsertHelperCommand(sublime_plugin.TextCommand):
     def run(self, edit, args):
         """Insert the require statement after the module
         exports have been choosen"""
-        print('At least I got here...')
         module_info = get_module_info(args['module'], self.view)
         self.path = module_info['module_path']
         self.module_name = module_info['module_name']
@@ -280,12 +293,12 @@ class ExportInsertHelperCommand(sublime_plugin.TextCommand):
         require_string = 'var {export} = require({q}{path}{q}).{export};'
         return require_string.format(
             export=self.exports.pop(),
-            q=get_quotes(),
+            q=utils.get_quotes(),
             path=self.path
         )
 
     def get_many_exports_content(self):
-        destruc = get_pref('destructuring')
+        destruc = utils.get_pref('destructuring')
         if destruc is True:
             return self.get_many_exports_destructured()
         return self.get_many_exports_standard()
@@ -300,13 +313,13 @@ class ExportInsertHelperCommand(sublime_plugin.TextCommand):
 
         require_string += ' }} = require({q}{path}{q});'.format(
             path=self.path,
-            q=get_quotes()
+            q=utils.get_quotes()
         )
 
         return require_string
 
     def get_many_exports_standard(self):
-        quotes = get_quotes()
+        quotes = utils.get_quotes()
         require_string = 'var {module} = require({q}{path}{q});'.format(
             module=self.module_name,
             q=quotes,
@@ -332,12 +345,12 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
         module_path = module_info['module_path']
         module_name = module_info['module_name']
 
-        quotes = get_quotes()
-
         view = self.view
 
         cursor = view.sel()[0]
         prev_text = view.substr(sublime.Region(0, cursor.begin())).strip()
+        next_text = view.substr(
+            sublime.Region(cursor.end(), cursor.end() + 80)).strip()
         last_bracket = self.get_last_opened_bracket(prev_text)
         in_brackets = last_bracket in ('(', '[')
         last_word = re.split(WORD_SPLIT_RE, prev_text)[-1]
@@ -347,9 +360,18 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
         )
         should_add_var = (not prev_text.endswith((':', '=')) and
                           not in_brackets)
+        context_allows_semicolon = (not next_text.startswith((';', ',')) and
+                                    not in_brackets)
 
-        snippet = RequireSnippet(module_name, module_path, quotes,
-                                 should_add_var, should_add_var_statement)
+        snippet = RequireSnippet(
+            module_name,
+            module_path,
+            should_add_var=should_add_var,
+            should_add_var_statement=should_add_var_statement,
+            context_allows_semicolon=context_allows_semicolon,
+            view=view,
+            file_name=view.file_name()
+        )
         view.run_command('insert_snippet', snippet.get_args())
 
     def get_last_opened_bracket(self, text):
@@ -371,11 +393,11 @@ def get_module_info(module_path, view):
     In the case that the module is a node core module, the module_path and
     module_name are the same."""
 
-    aliases = get_pref('alias')
-    omit_extensions = get_pref('omit_extensions')
+    aliased_to = utils.aliased(module_path, view=view)
+    omit_extensions = utils.get_project_pref('omit_extensions', view=view)
 
-    if module_path in aliases:
-        module_name = aliases[module_path]
+    if aliased_to:
+        module_name = aliased_to
     else:
         module_name = os.path.basename(module_path)
         module_name, extension = os.path.splitext(module_name)
