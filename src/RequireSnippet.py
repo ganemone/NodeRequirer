@@ -1,6 +1,7 @@
 from .utils import get_pref
 
 class RequireSnippet():
+    """Class to create snippet to insert for require statement"""
 
     def __init__(self, name, path, quotes,
                  should_add_var, should_add_var_statement):
