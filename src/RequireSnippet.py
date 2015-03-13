@@ -1,7 +1,10 @@
 import re
-from .utils import get_pref, get_project_pref, get_quotes, get_jscs_options, strip_snippet_groups
+from .utils import get_pref, get_project_pref, get_quotes
+from .utils import get_jscs_options, strip_snippet_groups
+
 
 class RequireSnippet():
+
     """Class to create snippet to insert for require statement"""
 
     def __init__(self, name, path,
@@ -67,12 +70,13 @@ class RequireSnippet():
         }
 
     def get_quotes(self):
-        # Allow explicit validateQuoteMarks rules to override the quote preferences
+        """Allow explicit validateQuoteMarks rules to
+        override the quote preferences"""
         # However ignore the 'true' autodetection setting.
         jscs_quotes = self.jscs_options.get('validateQuoteMarks')
         if isinstance(jscs_quotes, dict):
             jscs_quotes = jscs_quotes.get('mark')
-        if jscs_quotes and jscs_quotes != True:
+        if jscs_quotes and jscs_quotes is not True:
             return jscs_quotes
 
         # Use whatever quote type is set in preferences
@@ -101,9 +105,10 @@ class RequireSnippet():
         return self.context_allows_semicolon
 
     def should_strip_setter_whitespace(self):
-        """
-        Parses the disallowSpace{After,Before}BinaryOperators jscs options and checks if spaces
-        are not allowed before or after an `=` so we know if we should strip those from the var statement.
+        """Parses the disallowSpace{After,Before}BinaryOperators
+        jscs options and checks if spaces are not allowed before or
+        after an `=` so we know if we should strip those from the
+        var statement.
         """
 
         def parse_jscs_option(val):
@@ -116,8 +121,10 @@ class RequireSnippet():
             return False
 
         return dict(
-            before=parse_jscs_option(self.jscs_options.get('disallowSpaceBeforeBinaryOperators')),
-            after=parse_jscs_option(self.jscs_options.get('disallowSpaceAfterBinaryOperators'))
+            before=parse_jscs_option(
+                self.jscs_options.get('disallowSpaceBeforeBinaryOperators')),
+            after=parse_jscs_option(
+                self.jscs_options.get('disallowSpaceAfterBinaryOperators'))
         )
 
     def should_use_snippet(self):
