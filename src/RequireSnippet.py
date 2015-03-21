@@ -33,8 +33,8 @@ class RequireSnippet():
         should_strip_setter_whitespace = self.should_strip_setter_whitespace()
         promisify = self.promisify()
         require_fmt = 'require({quote}{path}{quote})'
-        import_fmt = 'import ${{1:{name}}} ${{2:as ${{3:somename}}}}'
-        import_fmt += ' from {quote}{path}{quote}'
+        import_fmt = 'import ${{1:{name}}}'
+        import_fmt += ' from {quote}{path}{quote};'
 
         if promisify:
             require_fmt = '%s(%s)' % (promisify, require_fmt)
