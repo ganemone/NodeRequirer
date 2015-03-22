@@ -84,24 +84,33 @@ class RequireCommand(sublime_plugin.TextCommand):
             'See the readme for more information.'
         )
 
-    def get_project_folder(self):
-        print('Getting Project Folder')
-        project_data = sublime.active_window().project_data()
-        print(project_data)
-        if project_data:
-            print('Has Project Data')
-            first_folder = project_data['folders'][0]['path']
-            return first_folder
-
+    def get_project_folder(self) -> str:
         # Walk through directories if we didn't find it easily
         dirname = os.path.dirname(self.view.file_name())
         while dirname:
-            if os.path.exists(os.path.join(dirname, 'package.json')):
+            pkg = os.path.join(dirname, 'package.json')
+            bwr = os.path.join(dirname, 'bower.json')
+            if os.path.exists(pkg) or os.path.exists(bwr):
                 return dirname
             parent = os.path.abspath(os.path.join(dirname, os.pardir))
             if parent == dirname:
                 break
             dirname = parent
+
+        try:
+            project_data = sublime.active_window().project_data()
+            if project_data:
+                print('Project Data: {0}'.format(project_data))
+                first_folder = project_data['folders'][0]['path']
+                return first_folder
+        except:
+            pass
+        sublime.error_message(
+            'Can\'t find a package.json or bower.json corresponding to your '
+            'project. If you don\'t have one of these, you must specify the '
+            'full path to your project in a .sublime-project file. See the '
+            'README for more details'
+        )
 
     def load_file_list(self):
         self.get_dependencies()
