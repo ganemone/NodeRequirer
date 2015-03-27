@@ -40,6 +40,11 @@
         "graceful-fs": "fs",
         "findup-sync": "findup",
         "gulp-util": "gutil",
+        "aws-sdk": "AWS",
+        "connect-dynamodb": "DynamoDBStore",
+        "connect-mysql": "MySQLStore",
+        "connect-sdb": "SdbStore",
+        "connect-sqlite3": "SQLiteStore",
         "package.json": "pkg"
     },
 
