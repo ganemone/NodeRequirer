@@ -39,6 +39,7 @@
         "zepto": "$",
         "graceful-fs": "fs",
         "findup-sync": "findup",
+        "mime-types": "mime",
         "gulp-util": "gutil",
         "aws-sdk": "AWS",
         "connect-dynamodb": "DynamoDBStore",
