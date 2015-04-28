@@ -167,12 +167,35 @@ class RequireCommand(sublime_plugin.TextCommand):
             'devDependencies',
             'optionalDependencies'
         )
-        self.add_dependencies(dependency_types, package_json)
+        dependencies = self.add_dependencies(dependency_types, package_json)
+        modules_path = os.path.join(self.project_folder, 'node_modules')
+        self.walk_dependencies(dependencies, modules_path)
 
     def add_dependencies(self, dependency_types, json):
+        dependencies = []
         for dependency_type in dependency_types:
             if dependency_type in json:
-                self.files += json[dependency_type].keys()
+                dependencies += json[dependency_type].keys()
+        self.files += dependencies
+        return dependencies
+
+    def walk_dependencies(self, dependencies, modules_path):
+        for dependency in dependencies:
+            module_path = os.path.join(modules_path, dependency)
+            if not os.path.exists(module_path):
+                return
+
+            walk = os.walk(module_path)
+            for root, dirs, files in walk:
+                if 'node_modules' in dirs:
+                    dirs.remove('node_modules')
+                for file_name in files:
+                    basename = os.path.basename(file_name)
+                    if not file_name.endswith('.js') or basename == 'index.js':
+                        continue
+                    full_path = os.path.join(root, file_name)
+                    rel_path = os.path.relpath(full_path, module_path)
+                    self.files.append(os.path.join(dependency, rel_path))
 
     def on_done_call_func(self, choices, func):
         def on_done(index):
@@ -262,7 +285,6 @@ class RequireCommand(sublime_plugin.TextCommand):
                 'exports': self.selected_exports
             }
         })
-
 
 class SimpleRequireCommand(RequireCommand):
 
