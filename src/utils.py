@@ -188,6 +188,18 @@ def get_jscs_options(path):
     return options
 
 
+def should_add_semicolon(fileName=None):
+    # Ignore semicolons when jscs options say to
+    jscs_options = dict()
+    if fileName:
+        jscs_options = get_jscs_options(fileName)
+
+    if jscs_options.get('disallowSemicolons', False):
+        return False
+
+    return not get_pref('semicolon_free')
+
+
 def findup(path, relative_path):
     path = os.path.abspath(path)
     # Testing path against dirname(path) should be more reliable than

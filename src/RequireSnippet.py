@@ -1,17 +1,19 @@
+"""Contains the RequireSnippet class."""
 import re
-from .utils import get_pref, get_project_pref, get_quotes
+from .utils import get_pref, get_project_pref, get_quotes, should_add_semicolon
 from .utils import get_jscs_options, strip_snippet_groups
 
 
 class RequireSnippet():
 
-    """Class to create snippet to insert for require statement"""
+    """Class to create snippet to insert for require statement."""
 
     def __init__(self, name, path,
                  should_add_var, should_add_var_statement,
                  context_allows_semicolon,
                  view=None,
                  file_name=None):
+        """Constructor for RequireSnippet class."""
         self.view = view
         self.name = name
         self.path = path
@@ -28,34 +30,37 @@ class RequireSnippet():
             self.jscs_options = get_jscs_options(self.file_name)
 
     def get_formatted_code(self):
-        should_use_snippet = self.should_use_snippet()
-        should_add_semicolon = self.should_add_semicolon()
-        should_strip_setter_whitespace = self.should_strip_setter_whitespace()
-        promisify = self.promisify()
+        """Return formatted code for insertion"""
         require_fmt = 'require({quote}{path}{quote})'
         import_fmt = 'import ${{1:{name}}}'
-        import_fmt += ' from {quote}{path}{quote};'
+        import_fmt += ' from {quote}{path}{quote}'
 
+        # promisification based on preferences
+        promisify = self.promisify()
         if promisify:
             require_fmt = '%s(%s)' % (promisify, require_fmt)
 
+        # Add var statement based on preferences
         if self.should_add_var:
             require_fmt = '${{1:{name}}} = ' + require_fmt
             if self.should_add_var_statement:
                 require_fmt = self.var_type + ' ' + require_fmt
 
-        if should_add_semicolon:
+        # Add ;s depending on preferences and context
+        if self._should_add_semicolon():
             require_fmt += ';'
+            import_fmt += ';'
 
+        # Handle whitespace stripping if necessary
+        should_strip_setter_whitespace = self.should_strip_setter_whitespace()
         if should_strip_setter_whitespace['before']:
             require_fmt = re.sub(' =', '=', require_fmt)
-
         if should_strip_setter_whitespace['after']:
             require_fmt = re.sub('= ', '=', require_fmt)
 
         fmt = import_fmt if self.es6import else require_fmt
 
-        if not should_use_snippet:
+        if not self.should_use_snippet():
             fmt = strip_snippet_groups(fmt)
 
         return fmt.format(
@@ -94,15 +99,9 @@ class RequireSnippet():
 
         return None
 
-    def should_add_semicolon(self):
-        # Ignore semicolons when jscs options say to
-        if self.jscs_options.get('disallowSemicolons', False):
-            return False
-
-        if get_pref('semicolon_free'):
-            return False
-
-        return self.context_allows_semicolon
+    def _should_add_semicolon(self):
+        return (should_add_semicolon(self.file_name) and
+                self.context_allows_semicolon)
 
     def should_strip_setter_whitespace(self):
         """Parses the disallowSpace{After,Before}BinaryOperators

@@ -325,7 +325,8 @@ class ExportInsertHelperCommand(sublime_plugin.TextCommand):
         return self.get_many_exports_content()
 
     def get_single_export_content(self):
-        require_string = 'var {export} = require({q}{path}{q}).{export};'
+        require_string = 'var {export} = require({q}{path}{q}).{export}'
+
         return require_string.format(
             export=self.exports.pop(),
             q=utils.get_quotes(),
