@@ -60,11 +60,11 @@ Example `User Plugin Preferences`
     }
     
     // Use object destructuring when assigning multiple exports 
-    'destructuring': false,
+    "destructuring": false,
     
     // Use snippets when inserting require statements to allow
     // for easy variable name changing
-    'snippet': true
+    "snippet": true
 }
 ```
 
