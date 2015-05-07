@@ -1,3 +1,4 @@
+"""Contains classes for all NodeRequirer commands."""
 import sublime
 import sublime_plugin
 import os
@@ -13,12 +14,21 @@ WORD_SPLIT_RE = re.compile(r"\W+")
 IS_EXPORT_LINE = re.compile(r"exports\.(.*?)=")
 
 
+class RequireFromWordComand(sublime_plugin.TextCommand):
+
+    """Text command for adding require statment from hovering over word."""
+
+    def run(self, edit):
+        """Called when the command is run."""
+        self.edit = edit
+
+
 class RequireCommand(sublime_plugin.TextCommand):
 
-    """Text Command to prompt the user for a module, and upon
-    selection insert it into the current view"""
+    """Text Command which prompts for a module and inserts it into the file."""
 
     def run(self, edit, command):
+        """Called when the command is run."""
         self.edit = edit
         # Simple Require Command
         if command is 'simple':
@@ -58,16 +68,19 @@ class RequireCommand(sublime_plugin.TextCommand):
             self.files, self.on_done_call_func(self.files, func))
 
     def has_package(self):
+        """Check if the package.json is in the project directory."""
         return os.path.exists(
             os.path.join(self.project_folder, 'package.json')
         )
 
     def has_bower(self):
+        """Check if a bower.json is in the project directory."""
         return os.path.exists(
             os.path.join(self.project_folder, 'bower.json')
         )
 
     def on_path_entered(self, path):
+        """When a path is entered, set the project data."""
         sublime.active_window().set_project_data({
             'folders': [{
                 'path': path
@@ -75,9 +88,11 @@ class RequireCommand(sublime_plugin.TextCommand):
         })
 
     def on_path_changed(self, text):
+        """Do nothing when path is changed."""
         return None
 
     def on_canceled(self):
+        """Send error message if user cancels after entering a path."""
         return sublime.error_message(
             'You must configure the absolute path '
             'for your project before using NodeRequirer. '
@@ -85,6 +100,7 @@ class RequireCommand(sublime_plugin.TextCommand):
         )
 
     def get_project_folder(self) -> str:
+        """Get the root project folder."""
         # Walk through directories if we didn't find it easily
         dirname = os.path.dirname(self.view.file_name())
         while dirname:
@@ -113,10 +129,12 @@ class RequireCommand(sublime_plugin.TextCommand):
         )
 
     def load_file_list(self):
+        """Load the list of dependencies and local files."""
         self.get_dependencies()
         self.get_local_files()
 
     def get_local_files(self):
+        """Load the list of local files."""
         # Don't throw errors if invoked in a view without
         # a filename like the console
         if not self.view.file_name():
@@ -145,12 +163,14 @@ class RequireCommand(sublime_plugin.TextCommand):
                 self.files.append(file_name)
 
     def get_dependencies(self):
+        """Load project dependencies."""
         if self.has_bower():
             self.parse_bower()
         if self.has_package():
             self.parse_package()
 
     def parse_bower(self):
+        """Parse the bower.json file into a list of dependencies."""
         bower_path = os.path.join(self.project_folder, 'bower.json')
         bower = json.load(open(bower_path, 'r', encoding='UTF-8'))
         dependency_types = (
@@ -160,6 +180,7 @@ class RequireCommand(sublime_plugin.TextCommand):
         self.add_dependencies(dependency_types, bower)
 
     def parse_package(self):
+        """Parse the package.json file into a list of dependencies."""
         package = os.path.join(self.project_folder, 'package.json')
         package_json = json.load(open(package, 'r', encoding='UTF-8'))
         dependency_types = (
@@ -172,6 +193,7 @@ class RequireCommand(sublime_plugin.TextCommand):
         self.walk_dependencies(dependencies, modules_path)
 
     def add_dependencies(self, dependency_types, json):
+        """Common function for adding dependencies (bower or package.json)."""
         dependencies = []
         for dependency_type in dependency_types:
             if dependency_type in json:
@@ -180,6 +202,7 @@ class RequireCommand(sublime_plugin.TextCommand):
         return dependencies
 
     def walk_dependencies(self, dependencies, modules_path):
+        """Walk through deps to allow requiring of files in deps package."""
         for dependency in dependencies:
             module_path = os.path.join(modules_path, dependency)
             if not os.path.exists(module_path):
@@ -198,6 +221,7 @@ class RequireCommand(sublime_plugin.TextCommand):
                     self.files.append(os.path.join(dependency, rel_path))
 
     def on_done_call_func(self, choices, func):
+        """Return a function which is used with sublime list picking."""
         def on_done(index):
             if index >= 0:
                 return func(choices[index])
@@ -205,6 +229,7 @@ class RequireCommand(sublime_plugin.TextCommand):
         return on_done
 
     def insert(self, module):
+        """Run the insert helper command with the module selected."""
         self.view.run_command('require_insert_helper', {
             'args': {
                 'module': module
@@ -212,6 +237,7 @@ class RequireCommand(sublime_plugin.TextCommand):
         })
 
     def parse_exports(self, module):
+        """Parse a given modules exports (commonjs style)."""
         self.module = module
         # Module is core module
         if utils.is_core_module(module):
@@ -225,12 +251,14 @@ class RequireCommand(sublime_plugin.TextCommand):
             return self.parse_dependency_module_exports()
 
     def parse_core_module_exports(self):
+        """TODO: parse the core module exports."""
         sublime.error_message(
             'Parsing node core module exports is not yet '
             'implemented. Feel free to submit a PR!'
         )
 
     def parse_dependency_module_exports(self):
+        """Parse a deps exports (commonjs)."""
         base_path = os.path.join(
             self.project_folder, 'node_modules', self.module
         )
@@ -241,6 +269,7 @@ class RequireCommand(sublime_plugin.TextCommand):
         return self.parse_exports_in_file(main_path)
 
     def parse_exports_in_file(self, fpath):
+        """Parse exports in a given file (commonjs)."""
         f = open(fpath, 'r')
         for line in f:
             result = re.search(IS_EXPORT_LINE, line)
@@ -255,6 +284,7 @@ class RequireCommand(sublime_plugin.TextCommand):
         return self.show_exports()
 
     def show_exports(self):
+        """Prompt selection of exports for previously selected file."""
         sublime.set_timeout(
             lambda: sublime.active_window().show_quick_panel(
                 self.exports,
@@ -262,6 +292,7 @@ class RequireCommand(sublime_plugin.TextCommand):
         )
 
     def on_export_done(self, index):
+        """Handle selection of exports."""
         if index > 0:
             self.exports[0] = '------ Finish Selecting ------'
             # Add selected export to selected_exports list and
@@ -279,6 +310,7 @@ class RequireCommand(sublime_plugin.TextCommand):
             self.insert_exports()
 
     def insert_exports(self):
+        """Run export helper to insert selected exports into file."""
         self.view.run_command('export_insert_helper', {
             'args': {
                 'module': self.module,
@@ -286,29 +318,31 @@ class RequireCommand(sublime_plugin.TextCommand):
             }
         })
 
+
 class SimpleRequireCommand(RequireCommand):
 
-    """Helper command to call the RequireCommand with the
-    type argument 'simple'"""
+    """Command that calls the RequireCommand with the type argument simple."""
 
     def run(self, edit):
+        """Called when the SimpleRequireCommand is run."""
         super().run(edit, 'simple')
 
 
 class ExportRequireCommand(RequireCommand):
 
-    """Helper command to call the RequireCommand with the
-    type argument 'export'"""
+    """Command that calls the RequireCommand with the type argument export."""
 
     def run(self, edit):
+        """Called when the ExportRequireCommand is run."""
         super().run(edit, 'export')
 
 
 class ExportInsertHelperCommand(sublime_plugin.TextCommand):
 
+    """Command that inserts a list of specific exports required."""
+
     def run(self, edit, args):
-        """Insert the require statement after the module
-        exports have been choosen"""
+        """Insert require statement after the module exports are choosen."""
         module_info = get_module_info(args['module'], self.view)
         self.path = module_info['module_path']
         self.module_name = module_info['module_name']
@@ -320,11 +354,13 @@ class ExportInsertHelperCommand(sublime_plugin.TextCommand):
         self.view.insert(self.edit, position, content)
 
     def get_content(self):
+        """Get content to insert."""
         if len(self.exports) == 1:
             return self.get_single_export_content()
         return self.get_many_exports_content()
 
     def get_single_export_content(self):
+        """Get content for a single export."""
         require_string = 'var {export} = require({q}{path}{q}).{export}'
 
         return require_string.format(
@@ -334,12 +370,14 @@ class ExportInsertHelperCommand(sublime_plugin.TextCommand):
         )
 
     def get_many_exports_content(self):
+        """Get content for many exports."""
         destruc = utils.get_pref('destructuring')
         if destruc is True:
             return self.get_many_exports_destructured()
         return self.get_many_exports_standard()
 
     def get_many_exports_destructured(self):
+        """Get content for many exports with destructuring."""
         iter_exports = iter(self.exports)
         first_export = next(iter_exports)
         require_string = 'var {{{0}'.format(first_export)
@@ -355,6 +393,7 @@ class ExportInsertHelperCommand(sublime_plugin.TextCommand):
         return require_string
 
     def get_many_exports_standard(self):
+        """Get content for many exports without destructuring."""
         quotes = utils.get_quotes()
         require_string = 'var {module} = require({q}{path}{q});'.format(
             module=self.module_name,
@@ -375,8 +414,10 @@ class ExportInsertHelperCommand(sublime_plugin.TextCommand):
 
 class RequireInsertHelperCommand(sublime_plugin.TextCommand):
 
+    """Command for inserting a basic require statement."""
+
     def run(self, edit, args):
-        """Insert the require statement after the module has been choosen"""
+        """Insert the require statement after the module has been choosen."""
         module_info = get_module_info(args['module'], self.view)
         module_path = module_info['module_path']
         module_name = module_info['module_name']
@@ -411,7 +452,7 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
         view.run_command('insert_snippet', snippet.get_args())
 
     def get_last_opened_bracket(self, text):
-        """Return the last open bracket before the current cursor position"""
+        """Return the last open bracket before the current cursor position."""
         counts = [(pair, text.count(pair[0]) - text.count(pair[1]))
                   for pair in ('()', '[]', '{}')]
 
@@ -425,10 +466,11 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
 
 
 def get_module_info(module_path, view):
-    """Gets a dictionary with keys for the module_path and the module_name.
-    In the case that the module is a node core module, the module_path and
-    module_name are the same."""
+    """Get a dictionary with keys for the module_path and the module_name.
 
+    In the case that the module is a node core module, the module_path and
+    module_name are the same.
+    """
     aliased_to = utils.aliased(module_path, view=view)
     omit_extensions = utils.get_project_pref('omit_extensions', view=view)
 
