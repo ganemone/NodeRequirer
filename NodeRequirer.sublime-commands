@@ -13,5 +13,9 @@
     "args": {
       "file": "${packages}/User/NodeRequirer.sublime-settings"
     }
+  },
+  {
+    "caption": "RequireFromWord",
+    "command": "require_from_word"
   }
 ]
