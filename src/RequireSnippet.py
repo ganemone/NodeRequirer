@@ -9,7 +9,7 @@ class RequireSnippet():
     """Class to create snippet to insert for require statement."""
 
     def __init__(self, name, path,
-                 should_add_var, should_add_var_statement,
+                 should_add_var_name, should_add_var_statement,
                  context_allows_semicolon,
                  view=None,
                  file_name=None):
@@ -17,7 +17,7 @@ class RequireSnippet():
         self.view = view
         self.name = name
         self.path = path
-        self.should_add_var = should_add_var
+        self.should_add_var_name = should_add_var_name
         self.should_add_var_statement = should_add_var_statement
         self.context_allows_semicolon = context_allows_semicolon
         self.es6import = self.get_project_pref('import')
@@ -30,7 +30,7 @@ class RequireSnippet():
             self.jscs_options = get_jscs_options(self.file_name)
 
     def get_formatted_code(self):
-        """Return formatted code for insertion"""
+        """Return formatted code for insertion."""
         require_fmt = 'require({quote}{path}{quote})'
         import_fmt = 'import ${{1:{name}}}'
         import_fmt += ' from {quote}{path}{quote}'
@@ -41,7 +41,7 @@ class RequireSnippet():
             require_fmt = '%s(%s)' % (promisify, require_fmt)
 
         # Add var statement based on preferences
-        if self.should_add_var:
+        if self.should_add_var_name:
             require_fmt = '${{1:{name}}} = ' + require_fmt
             if self.should_add_var_statement:
                 require_fmt = self.var_type + ' ' + require_fmt
@@ -70,13 +70,13 @@ class RequireSnippet():
         )
 
     def get_args(self):
+        """Return arguments for insert snippet command."""
         return {
             'contents': self.get_formatted_code()
         }
 
     def get_quotes(self):
-        """Allow explicit validateQuoteMarks rules to
-        override the quote preferences"""
+        """Get type of quotes to use."""
         # However ignore the 'true' autodetection setting.
         jscs_quotes = self.jscs_options.get('validateQuoteMarks')
         if isinstance(jscs_quotes, dict):
@@ -88,6 +88,7 @@ class RequireSnippet():
         return get_quotes()
 
     def promisify(self):
+        """Handle promise stuff."""
         if not self.get_project_pref('usePromisify'):
             return
 
