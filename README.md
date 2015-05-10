@@ -13,11 +13,7 @@ you to include node core modules.
 Provides a dropdown of local files, node core modules, and dependencies defined in package.json + bower.json
 SublimeRequirer will insert `var {modulename} = require('/path/to/modulename.js')`.
 
-Example:
-```javascript
-var Person = require('../../models/person.js');
-var MovieStar = require('../../movie-star.js');
-```
+![NodeRequirer](http://zippy.gfycat.com/FantasticEachAplomadofalcon.gif)
 
 `ctrl+shift+e` => `RequireSpecificExportCommand`
 
@@ -40,6 +36,7 @@ Or with the destructuring option in preferences set to true...
 ```javascript
 var { doSomething, doAnotherThing } = require('../../utils/index.js');
 ```
+![NodeRequireExport](http://zippy.gfycat.com/TanSnappyAngora.gif)
 
 `ctrl+shift+o` => `RequireFromWordCommand`
 
@@ -48,6 +45,8 @@ the corresponding module at the bottom of the current imports list. A fuzzy stri
 algorithm similar to how Sublime Text filters lists on user input is used to select the best
 matching module to import. This is a new feature, and there still is some work to do on making
 it work perfectly in all scenarios.
+
+![RequireFromWordCommand](http://zippy.gfycat.com/HelpfulLastingHapuku.gif)
 
 ## Options
 
