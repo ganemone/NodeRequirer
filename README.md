@@ -22,7 +22,7 @@ var MovieStar = require('../../movie-star.js');
 `ctrl+shift+e` => `RequireSpecificExportCommand`
 
 Provides same initial drop down as `RequireCommand`. After selecting a module, the plugin will
-attempt to parse the file or dependency to look for commonjs exports, and show a list of possible 
+attempt to parse the file or dependency to look for commonjs exports, and show a list of possible
 exports. The user may then select one or more exports to be required.
 
 Example with single export selection:
@@ -40,6 +40,15 @@ Or with the destructuring option in preferences set to true...
 ```javascript
 var { doSomething, doAnotherThing } = require('../../utils/index.js');
 ```
+
+`ctrl+shift+o` => `RequireFromWordCommand`
+
+With the cursor on the desired variable, press `ctrl+shift+o` to have NodeRequirer import
+the corresponding module at the bottom of the current imports list. A fuzzy string matching
+algorithm similar to how Sublime Text filters lists on user input is used to select the best
+matching module to import. This is a new feature, and there still is some work to do on making
+it work perfectly in all scenarios.
+
 ## Options
 
 `NodeRequirer` exposes several useful plugin options for configuring aliases, import modes and quotes. These are available under `Preferences -> Package Settings -> Node Require` or search for `NodeRequirer: Set plugin options`
@@ -50,18 +59,18 @@ Example `User Plugin Preferences`
 {
     // Type of quotes to use
     "quotes": "single || double",
-    
+
     // Use ES6 import format, when syntactically correct
     "import": false,
-    
+
     "alias": {
         // <module name>: <variable name>
         "underscore": "_"
     }
-    
-    // Use object destructuring when assigning multiple exports 
+
+    // Use object destructuring when assigning multiple exports
     "destructuring": false,
-    
+
     // Use snippets when inserting require statements to allow
     // for easy variable name changing
     "snippet": true
@@ -78,7 +87,7 @@ Example `User Plugin Preferences`
 IMPORTANT: In order for node-requirer to parse your project correctly, you must have a
 .sublime-project file configured with the absolute path to your project. To create this file,
 select Project => Save Project As => and name your .sublime-project file what ever you want.
-Trying to require a file before this file has been created will prompt the user for a path, 
+Trying to require a file before this file has been created will prompt the user for a path,
 using the directory of the current file as default, and automatically create the file for you.
 Then edit the file to include a key called "path" with a value being the absolute path to your projects
 root directory.
