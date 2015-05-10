@@ -8,6 +8,7 @@ from NodeRequirer.src import utils
 from NodeRequirer.src.RequireSnippet import RequireSnippet
 from NodeRequirer.src.modules import core_modules
 from NodeRequirer.src.ModuleLoader import ModuleLoader
+from NodeRequirer.src.dependencies.fuzzywuzzy.fuzzywuzzy import process
 
 WORD_SPLIT_RE = re.compile(r"\W+")
 
@@ -22,6 +23,20 @@ class RequireFromWordCommand(sublime_plugin.TextCommand):
         cursor = self.view.sel()[0]
         word_region = self.view.word(cursor)
         word_text = self.view.substr(word_region)
+
+        self.module_loader = ModuleLoader(self.view.file_name())
+        files = self.module_loader.get_file_list()
+
+        module = process.extractOne(word_text, files)[0]
+        if module is None:
+            sublime.error_message("Could not find a suitable module to import")
+        else:
+            self.view.run_command('require_insert_helper', {
+                'args': {
+                    'module': module,
+                    'type': 'word'
+                }
+            })
 
 
 class RequireCommand(sublime_plugin.TextCommand):
@@ -83,7 +98,8 @@ class RequireCommand(sublime_plugin.TextCommand):
         """Run the insert helper command with the module selected."""
         self.view.run_command('require_insert_helper', {
             'args': {
-                'module': module
+                'module': module,
+                'type': 'standard'
             }
         })
 
@@ -224,6 +240,9 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, args):
         """Insert the require statement after the module has been choosen."""
+        self.edit = edit
+
+        is_from_word = (args['type'] == 'word')
         module_info = get_module_info(args['module'], self.view)
         module_path = module_info['module_path']
         module_name = module_info['module_name']
@@ -255,7 +274,43 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
             view=view,
             file_name=view.file_name()
         )
-        view.run_command('insert_snippet', snippet.get_args())
+        if is_from_word:
+            self.run_from_word(snippet)
+        else:
+            self.run_from_command(snippet)
+
+    def run_from_word(self, snippet):
+        """Insert a require statement from the ctrl+shift+o command.
+
+        This command mimics the functionality of import-js in that
+        the upon the command, the word under the cursor is used to
+        determine which module to import. The module is then inserted
+        at the bottom of the import list, rather than at the current
+        cursor position.
+        """
+        cursor = self.view.sel()[0]
+        prev_region = sublime.Region(0, cursor.begin())
+        lines = self.view.lines(prev_region)
+        region_for_insertion = None
+        for line in lines:
+            line_text = self.view.substr(line)
+            if 'require' not in line_text and 'import' not in line_text:
+                region_for_insertion = line
+                break
+
+        if region_for_insertion is None:
+            region_for_insertion = self.view.line(cursor.begin())
+
+        formatted_code = snippet.get_formatted_code() + '\n'
+        self.view.insert(
+            self.edit,
+            region_for_insertion.begin(),
+            formatted_code
+        )
+
+    def run_from_command(self, snippet):
+        """Run the standard insert snippet command at the cursor position."""
+        self.view.run_command('insert_snippet', snippet.get_args())
 
     def get_last_opened_bracket(self, text):
         """Return the last open bracket before the current cursor position."""
