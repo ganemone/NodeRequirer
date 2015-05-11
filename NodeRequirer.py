@@ -8,7 +8,6 @@ from NodeRequirer.src import utils
 from NodeRequirer.src.RequireSnippet import RequireSnippet
 from NodeRequirer.src.modules import core_modules
 from NodeRequirer.src.ModuleLoader import ModuleLoader
-from NodeRequirer.src.dependencies.fuzzywuzzy.fuzzywuzzy import process
 
 WORD_SPLIT_RE = re.compile(r"\W+")
 
@@ -27,16 +26,13 @@ class RequireFromWordCommand(sublime_plugin.TextCommand):
         self.module_loader = ModuleLoader(self.view.file_name())
         files = self.module_loader.get_file_list()
 
-        module = process.extractOne(word_text, files)[0]
-        if module is None:
-            sublime.error_message("Could not find a suitable module to import")
-        else:
-            self.view.run_command('require_insert_helper', {
-                'args': {
-                    'module': module,
-                    'type': 'word'
-                }
-            })
+        module = utils.best_fuzzy_match(files, word_text)
+        self.view.run_command('require_insert_helper', {
+            'args': {
+                'module': module,
+                'type': 'word'
+            }
+        })
 
 
 class RequireCommand(sublime_plugin.TextCommand):

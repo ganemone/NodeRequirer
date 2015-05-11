@@ -4,7 +4,7 @@ import io
 import json
 import re
 from io import StringIO
-
+from difflib import SequenceMatcher
 from .modules import core_modules
 
 SETTINGS_FILE = "NodeRequirer.sublime-settings"
@@ -213,3 +213,17 @@ def findup(path, relative_path):
         path = os.path.dirname(path)
 
     return False
+
+def fuzzy_match(first, second):
+    return SequenceMatcher(None, first, second).ratio()
+
+def best_fuzzy_match(s_list, string):
+    best_string = s_list.pop()
+    best_ratio = fuzzy_match(best_string, string)
+    for item in s_list:
+        ratio = fuzzy_match(item, string)
+        if ratio > best_ratio:
+            best_ratio = ratio
+            best_string = item
+
+    return best_string
