@@ -69,6 +69,15 @@ def is_local_file(module):
     return '/' in module
 
 
+def dirs_to_exclude(view=None):
+    """Return directories to exclude when searching for files."""
+    dirs = get_project_pref('exclude_dirs')
+    if dirs is None:
+        dirs = ['node_modules', '.git',
+                'bower_components', 'components']
+    return set(dirs)
+
+
 def aliased(module_path, view=None):
     aliases = get_project_pref('alias', view=view)
     alias_patterns = get_project_pref('alias-pattern', view=view)
@@ -214,8 +223,10 @@ def findup(path, relative_path):
 
     return False
 
+
 def fuzzy_match(first, second):
     return SequenceMatcher(None, first, second).ratio()
+
 
 def best_fuzzy_match(s_list, string):
     best_string = s_list.pop()

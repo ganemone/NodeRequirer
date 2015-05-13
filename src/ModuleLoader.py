@@ -79,8 +79,7 @@ class ModuleLoader():
             return []
 
         dirname = os.path.dirname(self.file_name)
-        exclude = set(['node_modules', '.git',
-                       'bower_components', 'components'])
+        exclude = utils.dirs_to_exclude()
         for root, dirs, files in os.walk(self.project_folder, topdown=True):
             if os.path.samefile(root, self.project_folder):
                 dirs[:] = [d for d in dirs if d not in exclude]
