@@ -72,7 +72,10 @@ Example `User Plugin Preferences`
 
     // Use snippets when inserting require statements to allow
     // for easy variable name changing
-    "snippet": true
+    "snippet": true,
+    // Directories to exclude when searching for files to require
+    // The default directories excluded are [".git", "bower_components", "node_modules"]
+    "exclude_dirs": [".git", "bower_components", "node_modules", "somerandom_directory"]
 }
 ```
 
@@ -82,27 +85,6 @@ Example `User Plugin Preferences`
 * `Ctrl+Shift+P` or `Cmd+Shift+P` in Linux/Windows/OS X
 * type `install`, select `Package Control: Install Package`
 * type `NodeRequirer`, select `NodeRequirer`
-
-IMPORTANT: In order for node-requirer to parse your project correctly, you must have a
-.sublime-project file configured with the absolute path to your project. To create this file,
-select Project => Save Project As => and name your .sublime-project file what ever you want.
-Trying to require a file before this file has been created will prompt the user for a path,
-using the directory of the current file as default, and automatically create the file for you.
-Then edit the file to include a key called "path" with a value being the absolute path to your projects
-root directory.
-
-Example:
-```javascript
-{
-  "folders":
-  [
-    {
-      "follow_symlinks": true,
-      "path": "/Users/giancarloanemone/Documents/dev/node/projectname"
-    }
-  ]
-}
-```
 
 ### Options
 
