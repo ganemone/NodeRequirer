@@ -73,8 +73,7 @@ def dirs_to_exclude(view=None):
     """Return directories to exclude when searching for files."""
     dirs = get_project_pref('exclude_dirs')
     if dirs is None:
-        dirs = ['node_modules', '.git',
-                'bower_components', 'components']
+        dirs = ['node_modules', '.git', 'bower_components']
     return set(dirs)
 
 
