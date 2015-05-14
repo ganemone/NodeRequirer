@@ -68,7 +68,18 @@ class ModuleLoader():
 
     def get_file_list(self):
         """Return the list of dependencies and local files."""
-        return self.get_local_files() + self.get_dependencies()
+        files = self.get_local_files() + self.get_dependencies()
+        exclude_patterns = utils.file_exclude_patterns()
+
+        def should_include_file(file):
+            for pattern in exclude_patterns:
+                if pattern in file:
+                    return False
+            return True
+        files = list(filter(
+            lambda f: should_include_file(f), files
+        ))
+        return files
 
     def get_local_files(self):
         """Load the list of local files."""

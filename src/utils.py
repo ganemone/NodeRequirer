@@ -71,10 +71,16 @@ def is_local_file(module):
 
 def dirs_to_exclude(view=None):
     """Return directories to exclude when searching for files."""
-    dirs = get_project_pref('exclude_dirs')
-    if dirs is None:
-        dirs = ['node_modules', '.git', 'bower_components']
+    defaults = ['node_modules', '.git', 'bower_components']
+    dirs = get_project_pref('exclude_dirs') or defaults
     return set(dirs)
+
+
+def file_exclude_patterns(view=None):
+    """Return file patterns to exclude when searching for files."""
+    defaults = ['.jpg', '.png', 'DS_STORE', '.gitignore', '.md', 'LICENSE']
+    patterns = get_project_pref('file_exclude_patterns') or defaults
+    return set(patterns)
 
 
 def aliased(module_path, view=None):
