@@ -75,7 +75,10 @@ Example `User Plugin Preferences`
     "snippet": true,
     // Directories to exclude when searching for files to require
     // The default directories excluded are [".git", "bower_components", "node_modules"]
-    "exclude_dirs": [".git", "bower_components", "node_modules", "somerandom_directory"]
+    "exclude_dirs": [".git", "bower_components", "node_modules", "somerandom_directory"],
+    // File patterns to exclude. Basically does a substring search. Not very fancy
+    // Default patterns: [".jpg", ".png", ".gif", ".md", "LICENSE", ".gitignore", "DS_STORE"]
+    "file_exclude_patterns": []
 }
 ```
 
