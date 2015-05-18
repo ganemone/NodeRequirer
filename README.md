@@ -1,6 +1,8 @@
 # NodeRequirer - A Sublime Text 3 plugin for requiring node modules
 #### [Sublime Text 3](http://www.sublimetext.com/3)
 
+<a href='https://pledgie.com/campaigns/29265'><img alt='Click here to lend your support to: NodeRequirer Donations and make a donation at pledgie.com !' src='https://pledgie.com/campaigns/29265.png?skin_name=chrome' border='0' ></a>
+
 ## About
 This is a Sublime Text 3 plugin allowing you to easily require node modules
 without having to worry about relative paths. It parses your project to allow you
