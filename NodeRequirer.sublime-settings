@@ -51,7 +51,8 @@
         "connect-mysql": "MySQLStore",
         "connect-sdb": "SdbStore",
         "connect-sqlite3": "SQLiteStore",
-        "package.json": "pkg"
+        "package.json": "pkg",
+        "tape": "test"
     },
 
     // Common "alias" patterns that can be expressed using regular expressions
