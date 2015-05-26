@@ -52,7 +52,9 @@
         "connect-sdb": "SdbStore",
         "connect-sqlite3": "SQLiteStore",
         "package.json": "pkg",
-        "tape": "test"
+        "tape": "test",
+        "r": "rethinkdb",
+        "r": "rethinkdbdash"
     },
 
     // Common "alias" patterns that can be expressed using regular expressions
