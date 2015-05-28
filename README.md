@@ -60,7 +60,10 @@ Example `User Plugin Preferences`
 {
     // Type of quotes to use
     "quotes": "single || double",
-
+    
+    // Use 'var', 'const', or 'let' variable declarations
+    "var: "var",
+    
     // Use ES6 import format, when syntactically correct
     "import": false,
 
