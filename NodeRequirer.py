@@ -163,71 +163,27 @@ class ExportInsertHelperCommand(sublime_plugin.TextCommand):
     def run(self, edit, args):
         """Insert require statement after the module exports are choosen."""
         module_info = get_module_info(args['module'], self.view)
-        self.path = module_info['module_path']
-        self.module_name = module_info['module_name']
-        self.exports = args['exports']
+        module_path = module_info['module_path']
+        module_name = module_info['module_name']
+        exports = args['exports']
+        destructuring = utils.get_pref('destructuring')
         self.edit = edit
 
-        content = self.get_content()
+        snippet = RequireSnippet(
+            module_name,
+            module_path,
+            should_add_var_name=True,
+            should_add_var_statement=True,
+            context_allows_semicolon=True,
+            view=self.view,
+            file_name=self.view.file_name(),
+            exports=exports,
+            destructuring=destructuring
+        )
+
+        content = snippet.get_formatted_code()
         position = self.view.sel()[0].begin()
         self.view.insert(self.edit, position, content)
-
-    def get_content(self):
-        """Get content to insert."""
-        if len(self.exports) == 1:
-            return self.get_single_export_content()
-        return self.get_many_exports_content()
-
-    def get_single_export_content(self):
-        """Get content for a single export."""
-        require_string = 'var {export} = require({q}{path}{q}).{export}'
-
-        return require_string.format(
-            export=self.exports.pop(),
-            q=utils.get_quotes(),
-            path=self.path
-        )
-
-    def get_many_exports_content(self):
-        """Get content for many exports."""
-        destruc = utils.get_pref('destructuring')
-        if destruc is True:
-            return self.get_many_exports_destructured()
-        return self.get_many_exports_standard()
-
-    def get_many_exports_destructured(self):
-        """Get content for many exports with destructuring."""
-        iter_exports = iter(self.exports)
-        first_export = next(iter_exports)
-        require_string = 'var {{{0}'.format(first_export)
-        for export in iter_exports:
-            require_string += ', {0}'.format(export)
-
-        require_string += ' }} = require({q}{path}{q});'.format(
-            path=self.path,
-            q=utils.get_quotes()
-        )
-
-        return require_string
-
-    def get_many_exports_standard(self):
-        """Get content for many exports without destructuring."""
-        quotes = utils.get_quotes()
-        require_string = 'var {module} = require({q}{path}{q});'.format(
-            module=self.module_name,
-            q=quotes,
-            path=self.path
-        )
-        for export in self.exports:
-            require_string += '\n'
-            final = 'var {export} = require({q}{path}{q}).{export};'
-            require_string += final.format(
-                export=export,
-                q=quotes,
-                path=self.path
-            )
-
-        return require_string
 
 
 class RequireInsertHelperCommand(sublime_plugin.TextCommand):

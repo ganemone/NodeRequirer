@@ -206,6 +206,8 @@ class ModuleLoader():
     def get_exports_in_file(self, fpath):
         """get exports in a given file (commonjs)."""
         exports = []
+        if os.path.isdir(fpath):
+            fpath = os.path.join(fpath, 'index.js')
         f = open(fpath, 'r')
         for line in f:
             result = re.search(IS_EXPORT_LINE, line)
