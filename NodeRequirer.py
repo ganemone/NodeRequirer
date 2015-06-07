@@ -10,7 +10,7 @@ from NodeRequirer.src.modules import core_modules
 from NodeRequirer.src.ModuleLoader import ModuleLoader
 
 WORD_SPLIT_RE = re.compile(r"\W+")
-
+GLOBAL_IMPORT_RE = re.compile(r"^((var|let|const|\s{0,5})\s\w+\s*=\s*)?require\s*\(")
 
 class RequireFromWordCommand(sublime_plugin.TextCommand):
 
@@ -284,15 +284,26 @@ class RequireInsertHelperCommand(sublime_plugin.TextCommand):
         at the bottom of the import list, rather than at the current
         cursor position.
         """
+
         cursor = self.view.sel()[0]
         prev_region = sublime.Region(0, cursor.begin())
         lines = self.view.lines(prev_region)
         region_for_insertion = None
+        found_imports = False
         for line in lines:
             line_text = self.view.substr(line)
-            if 'require' not in line_text and 'import' not in line_text:
-                region_for_insertion = line
-                break
+
+            is_global_import = (
+                line_text.startswith("import") or
+                re.match(GLOBAL_IMPORT_RE, line_text)
+            )
+
+            if not is_global_import:
+                if found_imports:
+                    region_for_insertion = line
+                    break
+            else:
+                found_imports = True
 
         if region_for_insertion is None:
             region_for_insertion = self.view.line(cursor.begin())
