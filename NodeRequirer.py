@@ -54,10 +54,12 @@ class RequireFromWordCommand(sublime_plugin.TextCommand):
         if not os.path.exists(eslint_path):
             return []
 
-        args = [self.view.file_name(), '-f', 'compact']
+        args = ['-f', 'compact', '--stdin',
+                '--stdin-filename', self.view.file_name()]
 
         try:
-            output = node_bridge('', eslint_path, args)
+            text = self.view.substr(sublime.Region(0, self.view.size()))
+            output = node_bridge(text, eslint_path, args)
         except Exception as e:
             return []
 
