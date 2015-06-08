@@ -8,9 +8,11 @@ from NodeRequirer.src import utils
 from NodeRequirer.src.RequireSnippet import RequireSnippet
 from NodeRequirer.src.modules import core_modules
 from NodeRequirer.src.ModuleLoader import ModuleLoader
+from NodeRequirer.src.node_bridge import node_bridge
 
 WORD_SPLIT_RE = re.compile(r"\W+")
 GLOBAL_IMPORT_RE = re.compile(r"^((var|let|const|\s{0,5})\s\w+\s*=\s*)?require\s*\(")
+ESLINT_UNDEF_RE = re.compile(r'"(.*)" is not defined')
 
 class RequireFromWordCommand(sublime_plugin.TextCommand):
 
@@ -22,17 +24,48 @@ class RequireFromWordCommand(sublime_plugin.TextCommand):
         cursor = self.view.sel()[0]
         word_region = self.view.word(cursor)
         word_text = self.view.substr(word_region)
+        import_undefined_vars = utils.get_project_pref('import_undefined_vars',
+                                                       view=self.view)
 
         self.module_loader = ModuleLoader(self.view.file_name())
-        files = self.module_loader.get_file_list()
+        self.files = self.module_loader.get_file_list()
 
-        module = utils.best_fuzzy_match(files, word_text)
-        self.view.run_command('require_insert_helper', {
-            'args': {
-                'module': module,
-                'type': 'word'
-            }
-        })
+        words = [word_text]
+
+        if cursor.empty() and import_undefined_vars:
+            undef_vars = self.find_undefined_vars()
+            if undef_vars:
+                words = undef_vars
+
+        for word in words:
+            module = utils.best_fuzzy_match(self.files, word)
+            self.view.run_command('require_insert_helper', {
+                'args': {
+                    'module': module,
+                    'type': 'word'
+                }
+            })
+
+    def find_undefined_vars(self):
+        """Executes ESLint if it is installed as local module and finds undefined variables"""
+        eslint_path = os.path.join(self.module_loader.project_folder,
+                                   'node_modules',
+                                   'eslint', 'bin', 'eslint.js')
+        if not os.path.exists(eslint_path):
+            return []
+
+        args = [self.view.file_name(), '-f', 'compact']
+
+        try:
+            output = node_bridge('', eslint_path, args)
+        except Exception as e:
+            return []
+
+        return list(set([
+            re.search(ESLINT_UNDEF_RE, line).group(1)
+            for line in output.split('\n')
+            if '(no-undef)' in line
+        ]))
 
 
 class RequireCommand(sublime_plugin.TextCommand):

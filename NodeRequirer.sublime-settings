@@ -118,4 +118,8 @@
 
     // Allow for tab completion through require statement
     "snippets": true,
+
+    // find and import undefined vars with ESLint
+    // when "Require From Word" called without selected word
+    "import_undefined_vars": false
 }
