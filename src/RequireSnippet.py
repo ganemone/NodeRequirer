@@ -12,7 +12,9 @@ class RequireSnippet():
                  should_add_var_name, should_add_var_statement,
                  context_allows_semicolon,
                  view=None,
-                 file_name=None):
+                 file_name=None,
+                 exports=None,
+                 destructuring=False):
         """Constructor for RequireSnippet class."""
         self.view = view
         self.name = name
@@ -28,6 +30,8 @@ class RequireSnippet():
         self.jscs_options = dict()
         if self.file_name:
             self.jscs_options = get_jscs_options(self.file_name)
+        self.exports = exports
+        self.destructuring = destructuring or self.es6import
 
     def get_formatted_code(self):
         """Return formatted code for insertion."""
@@ -40,11 +44,21 @@ class RequireSnippet():
         if promisify:
             require_fmt = '%s(%s)' % (promisify, require_fmt)
 
-        # Add var statement based on preferences
-        if self.should_add_var_name:
-            require_fmt = '${{1:{name}}} = ' + require_fmt
-            if self.should_add_var_statement:
-                require_fmt = self.var_type + ' ' + require_fmt
+        if self.exports:
+            import_fmt = 'import {{ {exports} }} from {quote}{path}{quote}'
+
+            if not self.destructuring:
+                require_fmt = '%s {export} = %s.{export}' % (self.var_type,                                                             require_fmt)
+            else:
+                require_fmt = '%s {{ {exports} }} = %s' % (self.var_type,
+                                                           require_fmt)
+
+        else:
+            # Add var statement based on preferences
+            if self.should_add_var_name:
+                require_fmt = '${{1:{name}}} = ' + require_fmt
+                if self.should_add_var_statement:
+                    require_fmt = self.var_type + ' ' + require_fmt
 
         # Add ;s depending on preferences and context
         if self._should_add_semicolon():
@@ -63,10 +77,22 @@ class RequireSnippet():
         if not self.should_use_snippet():
             fmt = strip_snippet_groups(fmt)
 
+        if self.exports and not self.destructuring:
+            return "\n".join([
+                fmt.format(
+                    name=self.name,
+                    path=self.path,
+                    quote=self.get_quotes(),
+                    export=export
+                )
+                for export in self.exports
+            ])
+
         return fmt.format(
             name=self.name,
             path=self.path,
-            quote=self.get_quotes()
+            quote=self.get_quotes(),
+            exports=", ".join(self.exports or [])
         )
 
     def get_args(self):
