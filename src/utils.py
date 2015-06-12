@@ -235,8 +235,12 @@ def fuzzy_match(first, second):
 
 def best_fuzzy_match(s_list, string):
     best_string = s_list.pop()
+    if string in best_string:
+        return best_string
     best_ratio = fuzzy_match(best_string, string)
     for item in s_list:
+        if string in item:
+            return item
         ratio = fuzzy_match(item, string)
         if ratio > best_ratio:
             best_ratio = ratio
