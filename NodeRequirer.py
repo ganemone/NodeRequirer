@@ -354,12 +354,7 @@ def get_module_info(module_path, view):
 
         # Capitalize modules named with dashes
         # i.e. some-thing => SomeThing
-        dash_index = module_name.find('-')
-        while dash_index > 0:
-            first = module_name[:dash_index].capitalize()
-            second = module_name[dash_index + 1:].capitalize()
-            module_name = '{fst}{snd}'.format(fst=first, snd=second)
-            dash_index = module_name.find('-')
+        module_name = camelcase(module_name)
 
     # Fix paths for windows
     if os.sep != '/':
@@ -369,3 +364,6 @@ def get_module_info(module_path, view):
         'module_path': module_path,
         'module_name': module_name
     }
+
+def camelcase(str):
+    return ''.join(word[0].upper() + word[1:] for word in str.split('-'))
