@@ -62,7 +62,7 @@ Example `User Plugin Preferences`
     "quotes": "single || double",
     
     // Use 'var', 'const', or 'let' variable declarations
-    "var: "var",
+    "var": "var",
     
     // Use ES6 import format, when syntactically correct
     "import": false,
@@ -70,7 +70,7 @@ Example `User Plugin Preferences`
     "alias": {
         // <module name>: <variable name>
         "underscore": "_"
-    }
+    },
 
     // Use object destructuring when assigning multiple exports
     "destructuring": false,
