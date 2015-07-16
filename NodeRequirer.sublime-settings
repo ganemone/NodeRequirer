@@ -53,6 +53,7 @@
         "connect-sqlite3": "SQLiteStore",
         "package.json": "pkg",
         "tape": "test",
+        "sequelize": "Sequelize",
         "r": "rethinkdb",
         "r": "rethinkdbdash"
     },
