@@ -59,7 +59,8 @@
 
     // Common "alias" patterns that can be expressed using regular expressions
     "alias-pattern": {
-        "gulp-(.+)": "\\1"
+        "gulp-(.+)": "\\1",
+        "lodash\\.(.+)": "\\1"
     },
 
     // Use 'single' or "double" quotes
