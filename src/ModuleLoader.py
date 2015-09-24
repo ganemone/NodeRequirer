@@ -158,7 +158,7 @@ class ModuleLoader():
         for dependency in dependencies:
             module_path = os.path.join(modules_path, dependency)
             if not os.path.exists(module_path):
-                return []
+                continue
 
             walk = os.walk(module_path)
             for root, dirs, files in walk:
