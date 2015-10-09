@@ -3,6 +3,7 @@ import sublime
 import sublime_plugin
 import os
 import re
+import functools
 
 from NodeRequirer.src import utils
 from NodeRequirer.src.RequireSnippet import RequireSnippet
@@ -366,4 +367,8 @@ def get_module_info(module_path, view):
     }
 
 def camelcase(str):
-    return ''.join(word[0].upper() + word[1:] for word in str.split('-'))
+    split = str.split('-')
+    camelCased = split.pop(0)
+    for word in split:
+        camelCased = camelCased + word[:1].upper() + word[1:]
+    return camelCased
