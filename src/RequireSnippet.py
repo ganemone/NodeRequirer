@@ -24,7 +24,7 @@ class RequireSnippet():
         self.context_allows_semicolon = context_allows_semicolon
         self.es6import = self.get_project_pref('import')
         self.var_type = self.get_project_pref('var')
-        if self.var_type not in ('var', 'const', 'let'):
+        if self.var_type not in ('var', 'const', 'let', 'import'):
             self.var_type = 'var'
         self.file_name = file_name
         self.jscs_options = dict()
