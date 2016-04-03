@@ -338,11 +338,11 @@ def get_module_info(module_path, view):
         module_name = aliased_to
     else:
         module_name = os.path.basename(module_path)
-        module_name, extension = os.path.splitext(module_name)
+        module_name, extension = utils.splitext(module_name)
 
         # When requiring an index.js file, rename the
         # var as the directory directly above
-        if module_name == 'index' and extension == ".js":
+        if module_name == 'index' and extension.endswith(".js"):
             module_path = os.path.dirname(module_path)
             module_name = os.path.split(module_path)[-1]
             if module_name == '':
@@ -351,7 +351,7 @@ def get_module_info(module_path, view):
                 module_name = os.path.split(directory)[-1]
         # Depending on preferences, remove the file extension
         elif omit_extensions and module_path.endswith(tuple(omit_extensions)):
-            module_path = os.path.splitext(module_path)[0]
+            module_path = utils.splitext(module_path)[0]
 
         # Capitalize modules named with dashes
         # i.e. some-thing => SomeThing
