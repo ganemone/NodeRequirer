@@ -7,7 +7,8 @@ import json
 from NodeRequirer.src import utils
 
 HAS_REL_PATH_RE = re.compile(r"\.?\.?\/")
-IS_EXPORT_LINE = re.compile(r"exports\.(.*?)=")
+IS_EXPORT_LINE_COMMONJS = re.compile(r"exports\.(.*?)=")
+IS_EXPORT_LINE_ES6 = re.compile(r"export\s+(var|let|const|function|class)?([^()\[\]{},/*<>%\s-]+)")
 
 
 class ModuleLoader():
@@ -210,13 +211,13 @@ class ModuleLoader():
             fpath = os.path.join(fpath, 'index.js')
         f = open(fpath, 'r')
         for line in f:
-            result = re.search(IS_EXPORT_LINE, line)
+            result = re.search(IS_EXPORT_LINE_COMMONJS, line)
             if result:
                 exports.append(result.group(1).strip())
+            result = re.search(IS_EXPORT_LINE_ES6, line)
+            if result:
+                exports.append(result.group(2).strip())
 
         if len(exports) <= 1:
-            return sublime.error_message(
-                'Unable to find specific exports. Note: We currently'
-                ' only support parsing commonjs style exporting'
-            )
+            return sublime.error_message('Unable to find specific exports.')
         return exports
