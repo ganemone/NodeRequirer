@@ -132,5 +132,10 @@
 
     // find and import undefined vars with ESLint
     // when "Require From Word" called without selected word
-    "import_undefined_vars": false
+    "import_undefined_vars": false,
+
+    // for use with https://github.com/toptal/component-resolver-webpack
+    // (allows `<foldername>.js` to be used in place of `index.js`)
+    // instead of `moduleName/moduleName.js` import just `moduleName`
+    "dirname_as_index": false
 }

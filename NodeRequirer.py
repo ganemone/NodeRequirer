@@ -342,7 +342,12 @@ def get_module_info(module_path, view):
 
         # When requiring an index.js file, rename the
         # var as the directory directly above
-        if module_name == 'index' and extension.endswith(".js"):
+        consume_identical = utils.get_project_pref('dirname_as_index', view=view)
+        parent_dir = os.path.split(os.path.dirname(module_path))[-1]
+        is_module_index = module_name == 'index' and extension.endswith(".js") \
+            or consume_identical and module_name == parent_dir
+
+        if is_module_index:
             module_path = os.path.dirname(module_path)
             module_name = os.path.split(module_path)[-1]
             if module_name == '':
