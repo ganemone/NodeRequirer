@@ -64,7 +64,8 @@
         "tape": "test",
         "sequelize": "Sequelize",
         "r": "rethinkdb",
-        "r": "rethinkdbdash"
+        "r": "rethinkdbdash",
+        "underscore.string": "s"
     },
 
     // Common "alias" patterns that can be expressed using regular expressions
