@@ -2,7 +2,9 @@
 import re
 from .utils import get_pref, get_project_pref, get_quotes, should_add_semicolon
 from .utils import get_jscs_options, strip_snippet_groups
+import sublime
 
+CONTAINS_IMPORT = '^\s*import\s.*\sfrom\s'
 
 class RequireSnippet():
 
@@ -22,7 +24,14 @@ class RequireSnippet():
         self.should_add_var_name = should_add_var_name
         self.should_add_var_statement = should_add_var_statement
         self.context_allows_semicolon = context_allows_semicolon
+
         self.es6import = self.get_project_pref('import')
+        if self.es6import == 'detect':
+            # If the regexp is not found, find will return a tuple (-1, -1) in Sublime 3 or None in Sublime 2 
+            # https://github.com/SublimeTextIssues/Core/issues/534
+            contains_import = self.view.find(CONTAINS_IMPORT, 0)
+            self.es6import = all(x >= 0 for x in contains_import) if float(sublime.version()) >= 3000 else contains_import is not None
+
         self.var_type = self.get_project_pref('var')
         if self.var_type not in ('var', 'const', 'let', 'import'):
             self.var_type = 'var'

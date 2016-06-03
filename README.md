@@ -64,7 +64,7 @@ Example `User Plugin Preferences`
     // Use 'var', 'const', or 'let' variable declarations
     "var": "var",
     
-    // Use ES6 import format, when syntactically correct
+    // Use ES6 import format, when syntactically correct. Use detect to determine based on file buffer
     "import": false,
 
     "alias": {
