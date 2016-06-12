@@ -124,9 +124,14 @@
         "pg"
     ],
 
-    // Use ES6 Import Style
-    // i.e. import module from module
-    "import": false,
+    // Use ES6 Import Style. Use true to always use es6, false for always require
+    // or 'detect' to determine it based on the file context
+    // In detect mode NodeRequirer will parse the file to determine whether require/imports are used.
+    "import": "detect",
+
+    // Whether to prefer using ES6 imports or require() when neither are used in a file.
+    // Set to true for ES6 and false for Node require.
+    "detect_prefer_imports": false,
 
     // Allow for tab completion through require statement
     "snippets": true,
