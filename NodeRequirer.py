@@ -344,7 +344,7 @@ def get_module_info(module_path, view):
         # var as the directory directly above
         consume_identical = utils.get_project_pref('dirname_as_index', view=view)
         parent_dir = os.path.split(os.path.dirname(module_path))[-1]
-        is_module_index = module_name == 'index' and extension.endswith(".js") \
+        is_module_index = module_name == 'index' and extension == "js" \
             or consume_identical and module_name == parent_dir
 
         if is_module_index:
