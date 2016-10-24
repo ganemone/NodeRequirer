@@ -8,7 +8,7 @@ from NodeRequirer.src import utils
 
 HAS_REL_PATH_RE = re.compile(r"\.?\.?\/")
 IS_EXPORT_LINE_COMMONJS = re.compile(r"exports\.(.*?)=")
-IS_EXPORT_LINE_ES6 = re.compile(r"export\s+(var|let|const|function|class)?([^()\[\]{},/*<>%\s-]+)")
+IS_EXPORT_LINE_ES6 = re.compile(r"export\s+(var|let|const|function|class)?\s+([^()\[\]{},/*<>%\s-]+)")
 
 
 class ModuleLoader():
