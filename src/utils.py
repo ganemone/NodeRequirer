@@ -254,4 +254,5 @@ def splitext(path):
     """
     path_without_extensions = os.path.join(os.path.dirname(path), os.path.basename(path).split(os.extsep)[0])
     extensions = os.path.basename(path).split(os.extsep)[1:]
+    if len(extensions) >= 1: extensions = extensions[0]
     return (path_without_extensions, extensions)
