@@ -5,11 +5,11 @@ import os
 import re
 import functools
 
-from NodeRequirer.src import utils
-from NodeRequirer.src.RequireSnippet import RequireSnippet
-from NodeRequirer.src.modules import core_modules
-from NodeRequirer.src.ModuleLoader import ModuleLoader
-from NodeRequirer.src.node_bridge import node_bridge
+from .src import utils
+from .src.RequireSnippet import RequireSnippet
+from .src.modules import core_modules
+from .src.ModuleLoader import ModuleLoader
+from .src.node_bridge import node_bridge
 
 WORD_SPLIT_RE = re.compile(r"\W+")
 GLOBAL_IMPORT_RE = re.compile(r"^((var|let|const|\s{0,5})\s\w+\s*=\s*)?require\s*\(")
@@ -332,7 +332,7 @@ def get_module_info(module_path, view):
     module_name are the same.
     """
     aliased_to = utils.aliased(module_path, view=view)
-    omit_extensions = utils.get_project_pref('omit_extensions', view=view)
+    omit_extensions = tuple(utils.get_project_pref('omit_extensions', view=view))
 
     if aliased_to:
         module_name = aliased_to
@@ -344,7 +344,7 @@ def get_module_info(module_path, view):
         # var as the directory directly above
         consume_identical = utils.get_project_pref('dirname_as_index', view=view)
         parent_dir = os.path.split(os.path.dirname(module_path))[-1]
-        is_module_index = module_name == 'index' and extension == "js" \
+        is_module_index = module_name == 'index' and extension in omit_extensions \
             or consume_identical and module_name == parent_dir
 
         if is_module_index:
@@ -355,7 +355,7 @@ def get_module_info(module_path, view):
                 directory = os.path.dirname(current_file)
                 module_name = os.path.split(directory)[-1]
         # Depending on preferences, remove the file extension
-        elif omit_extensions and module_path.endswith(tuple(omit_extensions)):
+        elif module_path.endswith(omit_extensions):
             module_path = utils.splitext(module_path)[0]
 
         # Capitalize modules named with dashes
