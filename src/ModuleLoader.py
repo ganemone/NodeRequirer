@@ -218,6 +218,6 @@ class ModuleLoader():
             if result:
                 exports.append(result.group(2).strip())
 
-        if len(exports) <= 1:
+        if len(exports) <= 0:
             return sublime.error_message('Unable to find specific exports.')
         return exports
