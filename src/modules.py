@@ -16,6 +16,7 @@ core_modules = [
     'os',
     'path',
     'punycode',
+    'querystring',
     'readline',
     'stream',
     'string_decoder',
