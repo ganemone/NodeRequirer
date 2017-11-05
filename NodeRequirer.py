@@ -350,13 +350,14 @@ def get_module_info(module_path, view):
         if is_module_index:
             module_path = os.path.dirname(module_path)
             module_name = os.path.split(module_path)[-1]
-            if module_name == '':
-                current_file = view.file_module_name()
+            if module_name == '' or module_name == '.':
+                current_file = view.file_name()
                 directory = os.path.dirname(current_file)
                 module_name = os.path.split(directory)[-1]
         # Depending on preferences, remove the file extension
         elif module_path.endswith(omit_extensions):
             module_path = utils.splitext(module_path)[0]
+
 
         # Capitalize modules named with dashes
         # i.e. some-thing => SomeThing
