@@ -89,8 +89,21 @@
     "var": "var",
 
     // File extensions to omit when doing a local require.
-    // E.g. require('./filename') for ./filename.js if js is omited
+    // E.g. require('./filename') for ./filename.js if js is omited.
     "omit_extensions": ["js", "jsx", "tsx"],
+
+    "importable_extensions": [
+        // plain js
+        "js", "jsx", "tsx",
+        // css
+        "css", "less", "scss",
+        // images
+        "svg", "jpg", "png", "gif",
+        // templates
+        "hbs", "html", "ejs",
+        // schemas
+        "yaml", "json", "xml"
+    ],
 
     // Use Bluebird style promisification of libraries
     // This setting is best set per-project

@@ -6,6 +6,7 @@
 		"src/utils.py",
 		"src/node_bridge.py",
 		"src/modules.py",
+		"src/__init__.py",
 		"src/RequireSnippet.py",
 		"src/ModuleLoader.py",
 		"NodeRequirer.py"

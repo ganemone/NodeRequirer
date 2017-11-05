@@ -76,10 +76,9 @@ def dirs_to_exclude(view=None):
     return set(dirs)
 
 
-def file_exclude_patterns(view=None):
+def get_includable_extensions(view=None):
     """Return file patterns to exclude when searching for files."""
-    defaults = ['.gif', '.jpg', '.png', 'DS_STORE', '.gitignore', '.md', 'LICENSE']
-    patterns = get_project_pref('file_exclude_patterns') or defaults
+    patterns = [os.extsep + e for e in get_project_pref('importable_extensions')]
     return set(patterns)
 
 

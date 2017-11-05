@@ -70,16 +70,12 @@ class ModuleLoader():
     def get_file_list(self):
         """Return the list of dependencies and local files."""
         files = self.get_local_files() + self.get_dependencies()
-        exclude_patterns = utils.file_exclude_patterns()
+        include_patterns = utils.get_includable_extensions()
 
         def should_include_file(file):
-            for pattern in exclude_patterns:
-                if pattern in file:
-                    return False
-            return True
-        files = list(filter(
-            lambda f: should_include_file(f), files
-        ))
+            return any(file.endswith(p) for p in include_patterns)
+
+        files = [f for f in files if should_include_file(f)]
         return files
 
     def get_local_files(self):
@@ -156,6 +152,7 @@ class ModuleLoader():
     def get_dependency_files(self, dependencies, modules_path):
         """Walk through deps to allow requiring of files in deps package."""
         files_to_return = []
+
         for dependency in dependencies:
             module_path = os.path.join(modules_path, dependency)
             if not os.path.exists(module_path):
@@ -167,7 +164,8 @@ class ModuleLoader():
                     dirs.remove('node_modules')
                 for file_name in files:
                     basename = os.path.basename(file_name)
-                    if not file_name.endswith('.js') or basename == 'index.js':
+                    normalized_name, extension = utils.splitext(file_name)
+                    if basename == 'index.js':
                         continue
                     full_path = os.path.join(root, file_name)
                     rel_path = os.path.relpath(full_path, module_path)
