@@ -7,6 +7,7 @@
         "backbone.marionette": "Marionette",
         "bluebird": "Promise",
         "cheerio": "$",
+        "classNames": "classnames",
         "ember": "Ember",
         "handlebars": "Handlebars",
         "highland": "hl",
@@ -89,7 +90,7 @@
 
     // File extensions to omit when doing a local require.
     // E.g. require('./filename') for ./filename.js if js is omited
-    "omit_extensions": ["js"],
+    "omit_extensions": ["js", "jsx", "tsx"],
 
     // Use Bluebird style promisification of libraries
     // This setting is best set per-project
