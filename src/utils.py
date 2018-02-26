@@ -50,9 +50,11 @@ def get_project_pref(key, view=None):
 
         # Allow per-project preferences from the project file to override
         # preferences and project rc settings
-        project_settings = view.window().project_data().get('NodeRequirer')
-        if project_settings:
-            val = merge_pref(key, val, project_settings.get(key))
+        project_data = view.window().project_data()
+        if project_data:
+            project_settings = project_data.get('NodeRequirer')
+            if project_settings:
+                val = merge_pref(key, val, project_settings.get(key))
 
     return val
 
